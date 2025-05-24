@@ -1,54 +1,189 @@
+/* static/css/style.css */
 body {
-    font-family: sans-serif; /* A common, readable sans-serif font for general text */
-    display: flex; /* Uses Flexbox to help with centering content */
-    justify-content: center; /* Centers content horizontally */
-    align-items: center; /* Centers content vertically */
-    min-height: 100vh; /* Makes the body take up at least the full viewport height */
-    margin: 0; /* Removes default browser margin around the body */
-    background-color: #f0f0f0; /* A light gray background for the page */
-    color: #333; /* Default text color */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top to see score better */
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f2f5;
+    color: #333;
+    padding-top: 20px; /* Add some space at the top */
 }
 
-.container {
-    text-align: center; /* Centers text within the container */
-    background-color: white; /* White background for the main content box */
-    padding: 30px; /* Space inside the container */
-    border-radius: 8px; /* Rounded corners for the container */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* A subtle shadow to make the container "pop" */
+.game-container {
+    width: 90%;
+    max-width: 700px;
+    background-color: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
-h1 {
-    color: #1a73e8; /* A pleasant blue color for the main heading */
-    margin-top: 0; /* Removes default top margin from h1 if container provides enough padding */
+.game-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-.emoji-puzzle {
-    /* This font stack tries Noto Color Emoji first, then Apple's, then Segoe UI's, then a generic sans-serif emoji */
+.game-header h1 {
+    color: #1a73e8;
+    margin: 0 0 10px 0;
+    font-size: 28px;
+}
+
+.score-board {
+    font-size: 18px;
+    color: #555;
+    font-weight: bold;
+}
+
+#score-display {
+    color: #1a73e8;
+}
+
+.puzzle-area {
+    margin-bottom: 25px;
+}
+
+.emoji-puzzle-display {
     font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
-    font-size: 64px; /* Makes the emojis large and clear */
-    margin-top: 20px; /* Space above the puzzle display */
-    margin-bottom: 30px; /* Space below the puzzle display */
-    padding: 20px; /* Space inside the puzzle display area */
-    background-color: #e8f0fe; /* A very light blue background for the puzzle itself */
-    border-radius: 4px; /* Slightly rounded corners for the puzzle display area */
-    min-height: 80px; /* Ensures the box has some height even when "Loading..." */
-    display: flex; /* Using flex to center content within this box too */
+    font-size: 56px; /* Slightly adjusted */
+    padding: 15px;
+    background-color: #e8f0fe;
+    border-radius: 8px;
+    min-height: 70px;
+    display: flex;
     justify-content: center;
     align-items: center;
-    line-height: 1.2; /* Adjust line height if emojis get cut off vertically */
+    margin-bottom: 15px;
+    letter-spacing: 0.1em; /* Adds a bit of space between emojis */
 }
 
-#new-puzzle-button {
-    background-color: #1a73e8; /* Blue background for the button */
-    color: white; /* White text on the button */
-    border: none; /* Removes default browser border */
-    padding: 12px 24px; /* Space inside the button (top/bottom, left/right) */
-    font-size: 16px; /* Font size for the button text */
-    border-radius: 4px; /* Rounded corners for the button */
-    cursor: pointer; /* Changes the mouse cursor to a pointer on hover */
-    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+.category-display {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+    font-style: italic;
 }
 
-#new-puzzle-button:hover {
-    background-color: #1558b3; /* A darker blue when the mouse hovers over the button */
+#category-text {
+    font-weight: bold;
+    color: #444;
+}
+
+.phrase-display {
+    font-size: 28px; /* Larger for better readability */
+    font-weight: bold;
+    letter-spacing: 0.1em; /* Spacing between letters/blanks */
+    padding: 20px;
+    border: 1px dashed #ccc;
+    border-radius: 8px;
+    min-height: 60px;
+    display: flex;
+    flex-wrap: wrap; /* Allow words to wrap */
+    justify-content: center;
+    align-items: center;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.phrase-display .word {
+    margin-right: 0.5em; /* Space between words */
+    margin-bottom: 0.3em; /* Space for wrapped lines */
+}
+
+.phrase-display .letter-blank {
+    display: inline-block;
+    width: 0.8em; /* Width of the underscore */
+    text-align: center;
+    border-bottom: 2px solid #333;
+    margin-right: 0.1em; /* Tiny space next to each blank */
+}
+
+
+.interaction-area {
+    margin-bottom: 25px;
+}
+
+.guess-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#guess-input {
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-right: 10px;
+    flex-grow: 1; /* Allows input to take available space */
+    max-width: 400px;
+}
+
+#submit-guess-button,
+.new-puzzle-button-bottom, /* Combined styling for buttons */
+.hint-controls button {
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#submit-guess-button:hover,
+.new-puzzle-button-bottom:hover,
+.hint-controls button:hover {
+    background-color: #1558b3;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.hint-controls {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px; /* Space between button and timer text */
+}
+
+.hint-controls button {
+    background-color: #ff9800; /* Orange for hint button */
+}
+.hint-controls button:hover {
+    background-color: #e68a00;
+}
+
+
+.message-display {
+    font-size: 16px;
+    font-weight: bold;
+    min-height: 24px; /* Reserve space for messages */
+    margin-top: 15px;
+    color: #1a73e8; /* Default message color */
+}
+
+.message-display.error {
+    color: #d32f2f; /* Red for error messages */
+}
+
+.message-display.success {
+    color: #388e3c; /* Green for success messages */
+}
+
+.new-puzzle-button-bottom {
+    background-color: #4CAF50; /* Green for new puzzle */
+    display: block; /* Make it block to center with margin auto */
+    margin: 20px auto 0 auto; /* Center it */
+}
+.new-puzzle-button-bottom:hover {
+    background-color: #45a049;
 }

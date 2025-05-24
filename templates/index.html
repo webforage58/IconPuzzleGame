@@ -5,14 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emoji Puzzle Game</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    </head>
+</head>
 <body>
-    <div class="container">
-        <h1>Emoji Puzzle</h1>
-        <div id="puzzle-display" class="emoji-puzzle">
-            Loading puzzle...
+    <div class="game-container">
+        <header class="game-header">
+            <h1>Emoji Phrase Rebus</h1>
+            <div class="score-board">
+                Score: <span id="score-display">0</span>
+            </div>
+        </header>
+
+        <div class="puzzle-area">
+            <div id="emoji-display" class="emoji-puzzle-display">
+                Loading emojis...
+            </div>
+            <div id="category-display" class="category-display">
+                Category: <span id="category-text">Loading...</span>
+            </div>
+            <div id="phrase-display" class="phrase-display">
+                </div>
         </div>
-        <button id="new-puzzle-button">New Puzzle</button>
+
+        <div class="interaction-area">
+            <div class="guess-section">
+                <input type="text" id="guess-input" placeholder="Enter your guess here">
+                <button id="submit-guess-button">Submit Guess</button>
+            </div>
+            <div class="hint-controls">
+                <button id="pause-resume-hints-button">Pause Hints</button>
+                Time to next hint: <span id="hint-timer-display">--</span>s
+            </div>
+            <div id="message-display" class="message-display">
+                </div>
+        </div>
+
+        <button id="new-puzzle-button" class="new-puzzle-button-bottom">New Puzzle</button>
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
