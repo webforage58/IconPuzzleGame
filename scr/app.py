@@ -9,7 +9,7 @@ app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
 try:
     # Initialize with the model you confirmed is available
-    puzzle_gen_instance = PuzzleGenerator(model_name="gemma3:4b")
+    puzzle_gen_instance = PuzzleGenerator(model_name="gemma3:27b")
     print("PuzzleGenerator instance created.")
     # Initial check to see if Ollama is responsive through the connector
     if hasattr(puzzle_gen_instance, 'connector') and puzzle_gen_instance.connector:
