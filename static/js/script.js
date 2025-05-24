@@ -1,4 +1,4 @@
-// static/js/script.js (Full game logic with reordered functions + try...catch)
+// static/js/script.js (Complete Game Logic - May 24, 2025)
 document.addEventListener('DOMContentLoaded', function() {
     try {
         // --- DOM Elements ---
@@ -18,21 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
         let revealedWordsIndices = [];
         let currentTotalScore = 0;
         let currentPuzzleBasePoints = 100;
-        let hintIntervalId = null;
+        let hintTimeoutId = null;
         const HINT_INTERVAL_SECONDS = 15;
-        let timeToNextHint = HINT_INTERVAL_SECONDS;
+        let timeToNextHintTick = HINT_INTERVAL_SECONDS;
         let isHintPaused = false;
-        let unrevealedWordHintIndex = 0;
 
-        // --- CORE UI Update Functions (defined early) ---
+        // --- CORE UI Update Functions ---
         function updateScoreDisplay() {
             if (scoreDisplay) scoreDisplay.textContent = currentTotalScore;
         }
 
-        function displayMessage(text, type = 'info') {
+        function displayMessage(text, type = 'info') { // type can be 'info', 'success', 'error'
             if (messageDisplay) {
                 messageDisplay.textContent = text;
-                messageDisplay.className = 'message-display';
+                messageDisplay.className = 'message-display'; // Reset classes
                 if (type === 'success') {
                     messageDisplay.classList.add('success');
                 } else if (type === 'error') {
@@ -42,8 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         function renderPhraseDisplay() {
-            if (!currentPuzzle || !phraseDisplay) return;
-            phraseDisplay.innerHTML = ''; 
+            if (!currentPuzzle || !phraseDisplay || !currentPuzzle.words) {
+                if(phraseDisplay) phraseDisplay.innerHTML = ''; // Clear if no puzzle
+                return;
+            }
+            phraseDisplay.innerHTML = ''; // Clear previous phrase
 
             currentPuzzle.words.forEach((word, index) => {
                 const wordDiv = document.createElement('div');
@@ -52,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (revealedWordsIndices.includes(index)) {
                     wordDiv.textContent = word;
                 } else {
+                    // Display blanks for unrevealed words
                     for (let i = 0; i < word.length; i++) {
                         const letterSpan = document.createElement('span');
                         letterSpan.classList.add('letter-blank');
@@ -60,8 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 phraseDisplay.appendChild(wordDiv);
+                // Add a space after each word div, except the last one
                 if (index < currentPuzzle.words.length - 1) {
-                     const space = document.createTextNode('\u00A0');
+                     const space = document.createTextNode('\u00A0'); // Non-breaking space
                      phraseDisplay.appendChild(space);
                 }
             });
@@ -71,15 +75,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (hintTimerDisplay) hintTimerDisplay.textContent = value;
         }
 
-        // --- Hint Logic Functions (defined before use in fetchNewPuzzle/startGame) ---
+        // --- Hint Logic Functions ---
         function stopHintTimer() {
-            clearInterval(hintIntervalId);
-            hintIntervalId = null;
+            clearTimeout(hintTimeoutId);
+            hintTimeoutId = null;
+            console.log("Full script: Hint timer stopped.");
         }
         
         function revealNextWordAsHint() {
-            if (!currentPuzzle || unrevealedWordHintIndex >= currentPuzzle.words.length) {
-                return; 
+            if (!currentPuzzle || !currentPuzzle.words) {
+                console.log("Full script: revealNextWordAsHint - No current puzzle or words.");
+                return;
             }
     
             let wordToRevealGlobalIndex = -1;
@@ -90,70 +96,81 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            if (wordToRevealGlobalIndex !== -1 && !revealedWordsIndices.includes(wordToRevealGlobalIndex)) {
+            if (wordToRevealGlobalIndex !== -1) { 
                 revealedWordsIndices.push(wordToRevealGlobalIndex);
-                // unrevealedWordHintIndex++; // This was tracking which *hint number* it is, not direct word index.
-                                          // The loop above now correctly finds the next actual unrevealed word.
                 renderPhraseDisplay();
                 currentPuzzleBasePoints = Math.max(0, currentPuzzleBasePoints - 10); 
                 displayMessage(`Hint: Word revealed! Current puzzle points: ${currentPuzzleBasePoints}`, 'info');
-                console.log(`Revealed word index: ${wordToRevealGlobalIndex}`);
+                console.log(`Full script: Revealed word index: ${wordToRevealGlobalIndex}`);
+            } else {
+                console.log("Full script: revealNextWordAsHint - No more words to reveal by index search.");
             }
     
-            // Check if all words are now revealed
-            let allWordsRevealed = true;
+            let allWordsNowRevealed = true;
             for(let i=0; i < currentPuzzle.words.length; i++){
                 if(!revealedWordsIndices.includes(i)){
-                    allWordsRevealed = false;
+                    allWordsNowRevealed = false;
                     break;
                 }
             }
 
-            if (allWordsRevealed) {
-                stopHintTimer();
+            if (allWordsNowRevealed) {
                 updateHintTimerDisplay('All hints given');
+                stopHintTimer(); 
             } else {
-                 // Reset timer for the next hint if not all revealed
-                timeToNextHint = HINT_INTERVAL_SECONDS; 
-                updateHintTimerDisplay(timeToNextHint);
+                timeToNextHintTick = HINT_INTERVAL_SECONDS; 
+                updateHintTimerDisplay(timeToNextHintTick);
+                if (!isHintPaused) { 
+                    hintTimeoutId = setTimeout(hintTick, 1000); 
+                }
+            }
+        }
+
+        function hintTick() { 
+            if (isHintPaused || !currentPuzzle) {
+                if (!isHintPaused && currentPuzzle && hintTimeoutId) { 
+                   // If timer was active but became paused by other means or puzzle ended
+                   // For safety, can re-schedule if conditions are met, but revealNextWordAsHint handles rescheduling primarily
+                }
+                return;
+            }
+
+            timeToNextHintTick--;
+            updateHintTimerDisplay(timeToNextHintTick);
+
+            if (timeToNextHintTick <= 0) {
+                revealNextWordAsHint(); 
+            } else {
+                hintTimeoutId = setTimeout(hintTick, 1000);
             }
         }
 
         function startHintTimer() {
             stopHintTimer(); 
+            console.log("Full script: Starting hint timer sequence.");
+
+            if (!currentPuzzle || !currentPuzzle.words) {
+                 updateHintTimerDisplay('--'); console.log("Full script: No puzzle/words to start hint timer."); return;
+            }
             
-            // Check if all words are already revealed before starting a new timer
             let allWordsEffectivelyRevealed = true;
-            if (currentPuzzle && currentPuzzle.words) { // Ensure currentPuzzle and words exist
-                for(let i=0; i < currentPuzzle.words.length; i++){
-                    if(!revealedWordsIndices.includes(i)){
-                        allWordsEffectivelyRevealed = false;
-                        break;
-                    }
+            for(let i=0; i < currentPuzzle.words.length; i++){
+                if(!revealedWordsIndices.includes(i)){
+                    allWordsEffectivelyRevealed = false;
+                    break;
                 }
-            } else {
-                allWordsEffectivelyRevealed = true; // No puzzle or words, so nothing to reveal
             }
 
-
             if (isHintPaused || allWordsEffectivelyRevealed) {
-                updateHintTimerDisplay(isHintPaused ? 'Paused' : (allWordsEffectivelyRevealed && currentPuzzle ? 'All hints given' : '--'));
+                updateHintTimerDisplay(isHintPaused ? 'Paused' : (allWordsEffectivelyRevealed ? 'All hints given' : '--'));
+                console.log(`Full script: Hint timer not starting (paused: ${isHintPaused}, all revealed: ${allWordsEffectivelyRevealed})`);
                 return;
             }
     
-            timeToNextHint = HINT_INTERVAL_SECONDS;
-            updateHintTimerDisplay(timeToNextHint);
-    
-            hintIntervalId = setInterval(() => {
-                if (isHintPaused) return;
-    
-                timeToNextHint--;
-                updateHintTimerDisplay(timeToNextHint);
-    
-                if (timeToNextHint <= 0) {
-                    revealNextWordAsHint(); 
-                }
-            }, 1000); 
+            timeToNextHintTick = HINT_INTERVAL_SECONDS;
+            updateHintTimerDisplay(timeToNextHintTick);
+            hintTimeoutId = setTimeout(hintTick, 1000); 
+            console.log("Full script: Hint timer initiated.");
         }
         
         function togglePauseHints() {
@@ -162,10 +179,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (pauseResumeHintsButton) {
                 pauseResumeHintsButton.textContent = isHintPaused ? 'Resume Hints' : 'Pause Hints';
             }
+            
             if (isHintPaused) {
-                 updateHintTimerDisplay('Paused');
+                clearTimeout(hintTimeoutId); 
+                updateHintTimerDisplay('Paused');
+                displayMessage('Hints Paused.', 'info');
+                console.log("Full script: Hints Paused.");
             } else {
-                // If resuming, ensure the timer logic correctly shows current countdown or starts if needed
+                displayMessage('Hints Resumed.', 'info');
+                console.log("Full script: Hints Resumed.");
                 let allWordsCurrentlyRevealed = true;
                  if (currentPuzzle && currentPuzzle.words) {
                     for(let i=0; i < currentPuzzle.words.length; i++){
@@ -176,26 +198,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 if (!allWordsCurrentlyRevealed) {
-                     updateHintTimerDisplay(timeToNextHint);
-                     // If the timer was running, it will just continue. If it was stopped due to all hints given, it won't restart.
-                     // The startHintTimer() function handles not starting if all hints given.
+                     updateHintTimerDisplay(timeToNextHintTick); // Show current countdown before starting tick
+                     hintTimeoutId = setTimeout(hintTick, 1000); 
                 } else {
                      updateHintTimerDisplay('All hints given');
                 }
             }
-            displayMessage(isHintPaused ? 'Hints Paused.' : 'Hints Resumed.', 'info');
         }
 
-
-        // --- Puzzle Fetching & Setup (defined before initializeGame) ---
+        // --- Puzzle Fetching & Setup ---
         function resetForNewPuzzle() {
+            console.log("Full script: Resetting for new puzzle.");
             revealedWordsIndices = [];
             currentPuzzleBasePoints = 100;
-            // unrevealedWordHintIndex = 0; // Re-evaluating how this is used; direct check of revealedWordsIndices is better.
             isHintPaused = false;
             if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Hints';
             if (guessInput) guessInput.value = '';
             if (submitGuessButton) submitGuessButton.disabled = false;
+            timeToNextHintTick = HINT_INTERVAL_SECONDS; 
+            updateHintTimerDisplay(timeToNextHintTick); // Initialize display
             displayMessage('');
         }
 
@@ -216,28 +237,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPuzzle = await response.json();
                 console.log("Full script: Puzzle data received:", currentPuzzle);
 
-                if (currentPuzzle && currentPuzzle.emojis_list && currentPuzzle.phrase && currentPuzzle.words) {
+                if (currentPuzzle && currentPuzzle.emojis_list && currentPuzzle.phrase && currentPuzzle.words && Array.isArray(currentPuzzle.words)) {
                     resetForNewPuzzle();
                     if (emojiDisplay) emojiDisplay.textContent = currentPuzzle.emojis_list.join(' ');
                     if (categoryText) categoryText.textContent = currentPuzzle.category;
-                    renderPhraseDisplay(); // Shows initial blanks
-                    startHintTimer(); // Start hints for the new puzzle
+                    renderPhraseDisplay();
+                    startHintTimer(); 
                 } else {
-                    throw new Error("Invalid puzzle data received from server. Missing essential fields.");
+                    console.error("Full script: Invalid puzzle data structure from server.", currentPuzzle);
+                    throw new Error("Invalid puzzle data received from server. Missing essential fields or incorrect types.");
                 }
             } catch (error) {
                 console.error('Full script: Error fetching new puzzle:', error);
-                displayMessage(`Error: ${error.message}`, 'error');
+                displayMessage(`Error fetching puzzle: ${error.message}`, 'error');
                 if (emojiDisplay) emojiDisplay.textContent = 'Error';
+                currentPuzzle = null; // Ensure no old puzzle data is used
             }
         }
         
-        // --- Guess Handling (defined before initializeGame) ---
+        // --- Guess Handling (with improved normalization) ---
         function handleSubmitGuess() {
-            if (!currentPuzzle || !guessInput || !submitGuessButton) return;
+            if (!currentPuzzle || !guessInput || !submitGuessButton) {
+                console.log("Full script: handleSubmitGuess - prerequisites not met.");
+                return;
+            }
 
-            const userGuess = guessInput.value.trim().toLowerCase();
-            const solutionPhrase = currentPuzzle.phrase.trim().toLowerCase();
+            function normalizeString(str) {
+                if (typeof str !== 'string') return '';
+                return str.trim()
+                          .toLowerCase()
+                          .replace(/\s+/g, ' ')
+                          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?']/g, "");
+            }
+
+            const userGuess = normalizeString(guessInput.value);
+            const solutionPhrase = normalizeString(currentPuzzle.phrase);
+
+            console.log(`Full script: Normalized User Guess: "${userGuess}"`);
+            console.log(`Full script: Normalized Solution Phrase: "${solutionPhrase}"`);
 
             if (userGuess === '') {
                 displayMessage('Please enter a guess.', 'error');
@@ -248,36 +285,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 stopHintTimer();
                 currentTotalScore += currentPuzzleBasePoints;
                 
-                let allWordsWereManuallyGuessed = true;
-                for(let i=0; i < currentPuzzle.words.length; i++){
-                    if(revealedWordsIndices.includes(i)){ // If any word was revealed as a hint
-                        allWordsWereManuallyGuessed = false;
-                        break;
-                    }
-                }
-
-                if (allWordsWereManuallyGuessed) { // Check if any hints were used (i.e., words revealed)
+                // Speed bonus: if no words were revealed by hints
+                // Check if revealedWordsIndices is empty OR if currentPuzzleBasePoints is still at max.
+                // revealedWordsIndices might contain words if the user guessed *while* a hint was showing
+                // but before the points for that specific hint were deducted in the next cycle.
+                // A simpler check is if currentPuzzleBasePoints is still the initial max.
+                if (currentPuzzleBasePoints === 100) { 
                     currentTotalScore += 50; 
                     displayMessage(`Correct! +${currentPuzzleBasePoints} points +50 bonus! Solution: ${currentPuzzle.phrase}`, 'success');
                 } else {
                     displayMessage(`Correct! +${currentPuzzleBasePoints} points. Solution: ${currentPuzzle.phrase}`, 'success');
                 }
                 updateScoreDisplay();
-                submitGuessButton.disabled = true; 
+                if (submitGuessButton) submitGuessButton.disabled = true; 
                 revealedWordsIndices = currentPuzzle.words.map((_, i) => i); 
-                renderPhraseDisplay();
+                renderPhraseDisplay(); // Show full phrase
             } else {
                 displayMessage('Incorrect. Try again!', 'error');
             }
-            guessInput.value = ''; 
+            // Keep guessInput.value for editing on incorrect guess
         }
 
-
-        // --- Initialization (now defined after its dependencies) ---
+        // --- Initialization ---
         function initializeGame() {
             console.log("Full script: Initializing new game...");
-            updateScoreDisplay(); // Defined above
-            fetchNewPuzzle();     // Defined above
+            updateScoreDisplay();
+            fetchNewPuzzle();    
             if (guessInput) guessInput.value = '';
             if (submitGuessButton) submitGuessButton.disabled = false;
         }
@@ -285,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // --- Event Listeners ---
         console.log("Full script: Setting up event listeners...");
         if (newPuzzleButton) {
-            newPuzzleButton.addEventListener('click', fetchNewPuzzle); // fetchNewPuzzle directly
+            newPuzzleButton.addEventListener('click', fetchNewPuzzle);
         } else {
             console.error("Full script Error: New Puzzle button not found!");
         }
@@ -325,15 +358,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const body = document.querySelector('body');
         if (body) {
             const errorDiv = document.createElement('div');
-            // ... (error display div styling from before) ...
-             errorDiv.style.color = 'red';
-            errorDiv.style.backgroundColor = 'white';
-            errorDiv.style.padding = '20px';
-            errorDiv.style.border = '2px solid red';
-            errorDiv.style.position = 'fixed';
-            errorDiv.style.top = '10px';
-            errorDiv.style.left = '10px';
-            errorDiv.style.zIndex = '9999';
+            errorDiv.style.color = 'red'; errorDiv.style.backgroundColor = 'white';
+            errorDiv.style.padding = '20px'; errorDiv.style.border = '2px solid red';
+            errorDiv.style.position = 'fixed'; errorDiv.style.top = '10px';
+            errorDiv.style.left = '10px'; errorDiv.style.zIndex = '9999';
             errorDiv.innerHTML = `<h2>JavaScript Error!</h2>
                                 <p><strong>Type:</strong> ${e.name}</p>
                                 <p><strong>Message:</strong> ${e.message}</p>
