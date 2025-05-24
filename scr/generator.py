@@ -6,7 +6,7 @@ import random # MODIFIED: Added import for random selection
 
 class PuzzleGenerator:
     def __init__(self, model_name="gemma3:27b"): # Ensure this model is available in your Ollama
-        self.connector = ModelConnector() 
+        self.connector = ModelConnector()
         self.model_name = model_name
 
         available_models = self.connector.refresh_models()
@@ -24,28 +24,28 @@ class PuzzleGenerator:
             "Movie Title",
             "Book Title",
             "Well-known Saying",
-            "Song Title",
+            "Taiwan Trivia",
             "Historical Quote",
             "Common Object",
             "Famous Landmark",
-            "Board Games",
+            "Cedaredge Colorado Trivia",
             "Famous Inventions",
             "Literary Characters",
             "Mythological Creatures",
             "Food Dishes",
             "Musical Instruments",
-            "Constellations",
+            "Pickleball Terms",
             "Scientific Concepts",
-            "Animal Groups", 
-            "Geographic Features", 
-            "John Huberd's Favorite Things", # MODIFIED: Added a custom category            "Types of Dances",
+            "Animal Groups",
+            "Geographic Features",
+            "John Huberd's Favorite Things",
+            "Types of Dances",
             "Weather Phenomena",
             "University Subjects",
             "Famous Artists"
-        ] #
-        # self.current_category_index = 0 # MODIFIED: Commented out or can be removed, as we'll pick randomly
+        ]
         self.recently_used_phrases = []
-        self.max_recent_phrases = 15     #
+        self.max_recent_phrases = 15
 
     def _add_to_recent_phrases(self, phrase):
         """Adds a phrase to the list of recently used phrases, maintaining max size."""
@@ -77,6 +77,8 @@ class PuzzleGenerator:
         prompt = (
             f"Your task is to generate a puzzle based on a common phrase from the category: '{category}'.\n"
             "The phrase must consist of 3 to 6 words.\n"
+            "**The phrase MUST be a widely known and popular saying. Avoid obscure or niche terms, " # MODIFIED
+            "especially if the category is broad. Focus on phrases that a general audience would recognize.**\n" # MODIFIED
             "**It is absolutely ESSENTIAL that you provide a new, unique, and creative example each time you are called.**"
             f"{avoid_phrases_instruction}\n\n"
             "Provide your response exclusively in a VALID JSON format with the following keys:\n"
@@ -116,12 +118,10 @@ class PuzzleGenerator:
         if not self.categories:
             print("Error: No categories defined for puzzle generation.")
             return None
-            
-        # MODIFIED: Select category randomly instead of sequentially
-        current_category = random.choice(self.categories)
-        # self.current_category_index = (self.current_category_index + 1) % len(self.categories) # Old sequential logic
 
-        print(f"Requesting puzzle for randomly selected category: '{current_category}'") # Updated print statement
+        current_category = random.choice(self.categories)
+
+        print(f"Requesting puzzle for randomly selected category: '{current_category}'")
         print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}")
 
         prompt_text = self._create_emoji_puzzle_prompt_v2(current_category, self.recently_used_phrases)
@@ -135,7 +135,7 @@ class PuzzleGenerator:
                     cleaned_response = cleaned_response[len("```json"):].strip()
                 elif cleaned_response.startswith("```"):
                     cleaned_response = cleaned_response[len("```"):].strip()
-                
+
                 if cleaned_response.endswith("```"):
                     cleaned_response = cleaned_response[:-len("```")].strip()
 
@@ -145,15 +145,15 @@ class PuzzleGenerator:
                 if not all(key in puzzle_data for key in required_keys):
                     print(f"Error: LLM response JSON is missing one or more required keys. Data: {puzzle_data}")
                     return None
-                
+
                 if puzzle_data.get('category') != current_category:
                     print(f"Warning: LLM returned category '{puzzle_data.get('category')}' but category '{current_category}' was requested. Using requested category.")
                     puzzle_data['category'] = current_category
-                
+
                 if not isinstance(puzzle_data['words'], list) or not puzzle_data['words']:
                     print(f"Error: 'words' field is not a non-empty list. Data: {puzzle_data}")
                     return None
-                
+
                 if not all(isinstance(word, str) for word in puzzle_data['words']):
                     print(f"Error: Not all items in 'words' field are strings. Data: {puzzle_data}")
                     return None
@@ -167,13 +167,13 @@ class PuzzleGenerator:
                 emoji_char_list = [emoji for emoji in puzzle_data['emojis'].split(' ') if emoji]
                 if not emoji_char_list:
                     print(f"Warning: LLM response had an empty emoji string after parsing: '{puzzle_data['emojis']}'")
-                    return None 
+                    return None
 
                 parsed_details = {
                     'phrase': puzzle_data['phrase'],
                     'words': puzzle_data['words'],
                     'category': puzzle_data['category'],
-                    'emojis_list': emoji_char_list 
+                    'emojis_list': emoji_char_list
                 }
                 print(f"Successfully parsed puzzle details: {parsed_details}")
                 return parsed_details
@@ -192,16 +192,16 @@ class PuzzleGenerator:
 # --- Main execution for testing (optional) ---
 if __name__ == "__main__":
     print("Starting Puzzle Generator Test (JSON version with Random Category Selection)...")
-    
-    generator = PuzzleGenerator(model_name="gemma3:27b") #
+
+    generator = PuzzleGenerator(model_name="gemma3:27b")
 
     if not generator.connector or not generator.connector.get_models():
          print("Could not connect to Ollama or no models available.")
     else:
-        num_test_puzzles = len(generator.categories) # Test about one full cycle's worth
+        num_test_puzzles = len(generator.categories)
         print(f"Will attempt to generate {num_test_puzzles} puzzles with random category selection.")
 
-        for i in range(num_test_puzzles): 
+        for i in range(num_test_puzzles):
             print(f"\n--- Generating puzzle attempt {i+1}/{num_test_puzzles} ---")
             puzzle_details = generator.generate_parsed_puzzle_details()
             if puzzle_details:
