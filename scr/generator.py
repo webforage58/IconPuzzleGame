@@ -74,6 +74,7 @@ class PuzzleGenerator:
 
         self.recently_used_phrases = []
         self.max_recent_phrases = 15
+        self.max_retry_attempts = 3  # NEW: Maximum number of retries for duplicate phrases
 
     def _add_to_recent_phrases(self, phrase):
         """Adds a phrase to the list of recently used phrases, maintaining max size."""
@@ -129,29 +130,11 @@ class PuzzleGenerator:
         )
         return prompt
 
-    def generate_parsed_puzzle_details(self):
+    def _generate_single_puzzle_attempt(self, current_category):
         """
-        Generates an emoji puzzle with details (phrase, words, category, emojis)
-        and parses it from the expected JSON output, selecting categories randomly
-        and avoiding recently used phrases.
-
-        Returns:
-            dict | None: A dictionary with puzzle details if successful, otherwise None.
-                         Expected dict keys: 'phrase', 'words', 'category', 'emojis_list'
+        Makes a single attempt to generate a puzzle for the given category.
+        Returns the parsed puzzle details or None if generation/parsing failed.
         """
-        if not self.model_name and (not self.connector or not self.connector.get_models()):
-            print("Error: No LLM model is configured or ModelConnector not properly initialized.")
-            return None
-
-        if not self.categories:
-            print("Error: No categories defined for puzzle generation.")
-            return None
-
-        current_category = random.choice(self.categories)
-
-        print(f"Requesting puzzle for randomly selected category: '{current_category}'")
-        print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}")
-
         prompt_text = self._create_emoji_puzzle_prompt_v2(current_category, self.recently_used_phrases)
         response_text = self.connector.enhance_prompt(self.model_name, prompt_text, prompt_type="general")
 
@@ -190,7 +173,6 @@ class PuzzleGenerator:
                 if not generated_phrase:
                      print(f"Error: 'phrase' field is missing or empty. Data: {puzzle_data}")
                      return None
-                self._add_to_recent_phrases(generated_phrase)
 
                 emoji_char_list = [emoji for emoji in puzzle_data['emojis'].split(' ') if emoji]
                 if not emoji_char_list:
@@ -203,7 +185,6 @@ class PuzzleGenerator:
                     'category': puzzle_data['category'],
                     'emojis_list': emoji_char_list
                 }
-                print(f"Successfully parsed puzzle details: {parsed_details}")
                 return parsed_details
 
             except json.JSONDecodeError as e:
@@ -217,9 +198,68 @@ class PuzzleGenerator:
             print(f"Failed to generate puzzle details. LLM Response: {response_text}")
             return None
 
+    def generate_parsed_puzzle_details(self):
+        """
+        Generates an emoji puzzle with details (phrase, words, category, emojis)
+        and parses it from the expected JSON output, selecting categories randomly
+        and avoiding recently used phrases. Implements retry logic for duplicate phrases.
+
+        Returns:
+            dict | None: A dictionary with puzzle details if successful, otherwise None.
+                         Expected dict keys: 'phrase', 'words', 'category', 'emojis_list'
+        """
+        if not self.model_name and (not self.connector or not self.connector.get_models()):
+            print("Error: No LLM model is configured or ModelConnector not properly initialized.")
+            return None
+
+        if not self.categories:
+            print("Error: No categories defined for puzzle generation.")
+            return None
+
+        current_category = random.choice(self.categories)
+
+        print(f"Requesting puzzle for randomly selected category: '{current_category}'")
+        print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}")
+
+        # Retry loop for duplicate validation
+        for attempt in range(self.max_retry_attempts):
+            print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}")
+            
+            parsed_details = self._generate_single_puzzle_attempt(current_category)
+            
+            if parsed_details is None:
+                print(f"Attempt {attempt + 1} failed to generate valid puzzle details.")
+                continue
+            
+            generated_phrase = parsed_details['phrase']
+            
+            # Check if this phrase is already in our recently used list
+            if generated_phrase in self.recently_used_phrases:
+                print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.")
+                
+                # If this is the last attempt, we'll use it anyway
+                if attempt == self.max_retry_attempts - 1:
+                    print(f"Max retries reached. Using duplicate phrase: {generated_phrase}")
+                    self._add_to_recent_phrases(generated_phrase)
+                    print(f"Successfully parsed puzzle details (with duplicate warning): {parsed_details}")
+                    return parsed_details
+                else:
+                    print("Retrying to get a unique phrase...")
+                    continue
+            else:
+                # Success! We have a unique phrase
+                print(f"✅ Unique phrase generated: {generated_phrase}")
+                self._add_to_recent_phrases(generated_phrase)
+                print(f"Successfully parsed puzzle details: {parsed_details}")
+                return parsed_details
+        
+        # If we've exhausted all retries without success
+        print(f"Failed to generate a valid puzzle after {self.max_retry_attempts} attempts.")
+        return None
+
 # --- Main execution for testing (optional) ---
 if __name__ == "__main__":
-    print("Starting Puzzle Generator Test (JSON version with Random Category Selection)...")
+    print("Starting Puzzle Generator Test (JSON version with Random Category Selection and Retry Validation)...")
 
     generator = PuzzleGenerator(model_name="gemma3:27b")
 
@@ -241,4 +281,4 @@ if __name__ == "__main__":
             else:
                 print("\nCould not generate or parse puzzle details.")
             print("--------------------------------------")
-    print("\nPuzzle Generator Test (JSON version with Random Category Selection) Finished.")
+    print("\nPuzzle Generator Test (JSON version with Random Category Selection and Retry Validation) Finished.")
