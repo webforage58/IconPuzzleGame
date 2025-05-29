@@ -2,9 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Emoji Puzzle Game</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Emoji Puzzle">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a73e8">
+    
+    <!-- Link to manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Apple Touch Icon (create a 180x180 PNG with an emoji or icon) -->
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    
+    <!-- Your existing CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Add the mobile CSS from the previous artifact -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+    
+    <!-- Prevent zooming on input focus -->
+    <style>
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+    </style>
 </head>
 <body>
     <div class="game-container">
@@ -23,20 +47,20 @@
                 Category: <span id="category-text">Loading...</span>
             </div>
             <div id="phrase-display" class="phrase-display">
-                </div>
+            </div>
         </div>
 
         <div class="interaction-area">
             <div class="guess-section">
-                <input type="text" id="guess-input" placeholder="Enter your guess here">
+                <input type="text" id="guess-input" placeholder="Enter your guess here" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <button id="submit-guess-button">Submit Guess</button>
             </div>
             <div class="hint-controls">
                 <button id="pause-resume-hints-button">Pause Hints</button>
-                Time to next hint: <span id="hint-timer-display">--</span>s
+                <div>Time to next hint: <span id="hint-timer-display">--</span>s</div>
             </div>
             <div id="message-display" class="message-display">
-                </div>
+            </div>
         </div>
 
         <button id="new-puzzle-button" class="new-puzzle-button-bottom">New Puzzle</button>

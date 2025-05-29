@@ -1,6 +1,6 @@
 # src/app.py
 
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, send_from_directory
 # Make sure your generator and connector classes are in the src directory
 from model_connector import ModelConnector
 from generator import PuzzleGenerator # This now has the new methods
@@ -54,6 +54,16 @@ def generate_puzzle_api():
 def index():
     print("Serving index.html")
     return render_template('index.html')
+
+# Route to serve manifest.json for PWA
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory(app.static_folder, 'manifest.json')
+
+# Route to serve service worker if you add one later
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory(app.static_folder, 'service-worker.js')
 
 if __name__ == '__main__':
     print("Starting Flask development server for ConcentrationGameWeb...")
