@@ -102,6 +102,18 @@ body {
     margin-right: 0.1em; /* Tiny space next to each blank */
 }
 
+/* Hinted Letters Styling */
+.phrase-display .letter-hinted {
+    color: #ff5722;
+    background-color: #fff3e0;
+    border-radius: 3px;
+    padding: 0 2px;
+    border-bottom: 2px solid #ff5722;
+    display: inline-block;
+    width: 0.8em;
+    text-align: center;
+    margin-right: 0.1em;
+}
 
 .interaction-area {
     margin-bottom: 25px;
@@ -158,10 +170,34 @@ body {
 .hint-controls button {
     background-color: #ff9800; /* Orange for hint button */
 }
+
 .hint-controls button:hover {
     background-color: #e68a00;
 }
 
+/* Letter Hint Button Styling */
+#letter-hint-button {
+    background-color: #ff5722; /* Orange-red for distinction */
+    color: white;
+    margin-left: 10px;
+}
+
+#letter-hint-button:hover {
+    background-color: #e64a19;
+}
+
+#letter-hint-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Hint Information Styling */
+.hint-info {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-align: center;
+}
 
 .message-display {
     font-size: 16px;
@@ -184,6 +220,7 @@ body {
     display: block; /* Make it block to center with margin auto */
     margin: 20px auto 0 auto; /* Center it */
 }
+
 .new-puzzle-button-bottom:hover {
     background-color: #45a049;
 }

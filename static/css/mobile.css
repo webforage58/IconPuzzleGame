@@ -76,6 +76,24 @@ button {
     color: white;
 }
 
+/* Mobile Letter Hint Button Styling */
+#letter-hint-button {
+    background-color: #ff5722;
+    color: white;
+    margin: 5px 0;
+    width: 100%;
+}
+
+#letter-hint-button:active {
+    background-color: #e64a19;
+    transform: scale(0.98);
+}
+
+#letter-hint-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
 /* Better input field for mobile */
 #guess-input {
     font-size: 18px;
@@ -115,6 +133,17 @@ button {
     font-size: 24px;
     font-weight: bold;
     margin: 0 2px;
+}
+
+/* Mobile hinted letters styling */
+.phrase-display .letter-hinted {
+    color: #ff5722;
+    background-color: #fff3e0;
+    border-radius: 3px;
+    padding: 0 2px;
+    border-bottom: 2px solid #ff5722;
+    font-size: 24px;
+    font-weight: bold;
 }
 
 /* Message display for mobile */
@@ -158,6 +187,21 @@ button {
     margin: 20px 0;
 }
 
+/* Mobile Hint Controls Layout */
+.hint-controls {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Mobile Hint Info */
+.hint-info {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+    text-align: center;
+}
+
 /* Responsive adjustments for smaller phones */
 @media (max-width: 375px) {
     .emoji-puzzle-display {
@@ -172,6 +216,10 @@ button {
     #guess-input {
         font-size: 16px;
         padding: 14px;
+    }
+    
+    .phrase-display .letter-hinted {
+        font-size: 20px;
     }
 }
 
@@ -189,6 +237,12 @@ button {
     
     button {
         padding: 12px 24px;
+    }
+    
+    .hint-controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
 

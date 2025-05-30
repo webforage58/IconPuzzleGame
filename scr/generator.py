@@ -100,13 +100,13 @@ class PuzzleGenerator:
             avoid_phrases_instruction = (
                 f"\n**CRITICAL INSTRUCTION: To ensure variety, you MUST NOT generate any of the "
                 f"following phrases that have been used recently: {avoid_phrases_list}. "
-                "You MUST provide a completely new and unique phrase not on this list.**"
+                "You MUST provide a completely new and unique phrase not on this list. Generate a 5 digit random number and use that for the seed**"
             )
 
         prompt = (
             f"Your task is to generate a puzzle based on a common phrase from the category: '{category}'.\n"
-            "The phrase must consist of 3 to 6 words.\n"
-            "**The phrase MUST be a widely known and popular saying. Avoid obscure or niche terms, " # MODIFIED
+            "The phrase must consist of 3 words or less (e.g., 1, 2, or 3 words).\n"
+            "**The phrase absolutely MUST be common, widely known, and popular saying. No obscure or niche terms, " # MODIFIED
             "especially if the category is broad. Focus on phrases that a general audience would recognize.**\n" # MODIFIED
             "**It is absolutely ESSENTIAL that you provide a new, unique, and creative example each time you are called.**"
             f"{avoid_phrases_instruction}\n\n"
