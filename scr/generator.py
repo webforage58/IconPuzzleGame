@@ -2,7 +2,7 @@
 
 from model_connector import ModelConnector # Ensures ModelConnector is imported
 import json
-import random # MODIFIED: Added import for random selection
+import random # MODIFIED: Ensured import for random selection
 
 class PuzzleGenerator:
     def __init__(self, model_name="gemma3:27b"): # Ensure this model is available in your Ollama
@@ -20,65 +20,183 @@ class PuzzleGenerator:
                  print("No models available from Ollama. Cannot proceed with puzzle generation.")
 
         self.categories = [
-    "Toxic Relationship Red Flags",
-    "Divorce Lawyer Gold",
-    "Walk of Shame Essentials",
-    "Tinder Bio Lies",
-    "Quarantine Confessions",
-    "Ex's New Partner Stalking",
-    "Things You Google at 3AM",
-    "Regrettable Tattoo Ideas",
-    "Midlife Crisis Purchases",
-    "College Blackout Stories",
-    "Sugar Daddy Expectations",
-    "OnlyFans Content Ideas",
-    "Therapy Session Topics",
-    "Drunk Text Regrets",
-    "Friends with Benefits Rules",
-    "Strip Club Stories",
-    "Hangover Cures",
-    "Bad Life Decisions",
-    "Hookup Horror Stories",
-    "Office Affair Drama",
-    "Festival Drug Stories",
-    "Booty Call Etiquette",
-    "Breakup Revenge Plots",
-    "Embarrassing Medical Questions",
-    "Trust Issues Origins",
-    "AI & Tech Buzzwords",
-    "Awkward Social Situations",
-    "Bedroom Activities",
-    "Drunk Thoughts",
-    "Guilty Pleasures",
-    "Things You Do When Nobody's Watching",
-    "Millennial Problems",
-    "Gen Z Slang",
-    "Reality TV Drama",
-    "Conspiracy Theories",
-    "Superhero Innuendos",
-    "Awkward Family Holiday Moments",
-    "Vegas Stories",
-    "Bachelor Party Mishaps",
-    "Dating App Disasters",
-    "Workplace Gossip",
-    "Passive Aggressive Notes From Neighbors",
-    "Shower Thoughts",
-    "Things Said During Labor",
-    "Social Media Addictions",
-    "Things You've Secretly Judged People For",
-    "Things That Make You Go Hmm",
-    "Forbidden Love Stories",
-    "Guilty Netflix Binges",
-    "Regrettable Fashion Choices",
-    "Conspiracy Theories That Are Almost Believable",
-    "The Art of the Subtle Shade",
-    "Pet Peeves That Make You Question Humanity",
-    "Wine Mom Wisdom"
-]
+            "Toxic Relationship Red Flags",
+            "Divorce Lawyer Gold",
+            "Walk of Shame Essentials",
+            "Tinder Bio Lies",
+            "Quarantine Confessions",
+            "Ex's New Partner Stalking",
+            "Things You Google at 3AM",
+            "Regrettable Tattoo Ideas",
+            "Midlife Crisis Purchases",
+            "College Blackout Stories",
+            "Sugar Daddy Expectations",
+            "OnlyFans Content Ideas",
+            "Therapy Session Topics",
+            "Drunk Text Regrets",
+            "Friends with Benefits Rules",
+            "Strip Club Stories",
+            "Hangover Cures",
+            "Bad Life Decisions",
+            "Hookup Horror Stories",
+            "Office Affair Drama",
+            "Festival Drug Stories",
+            "Booty Call Etiquette",
+            "Breakup Revenge Plots",
+            "Embarrassing Medical Questions",
+            "Trust Issues Origins",
+            "AI & Tech Buzzwords",
+            "Awkward Social Situations",
+            "Bedroom Activities",
+            "Drunk Thoughts",
+            "Guilty Pleasures",
+            "Things You Do When Nobody's Watching",
+            "Millennial Problems",
+            "Gen Z Slang",
+            "Reality TV Drama",
+            "Conspiracy Theories",
+            "Superhero Innuendos",
+            "Awkward Family Holiday Moments",
+            "Vegas Stories",
+            "Bachelor Party Mishaps",
+            "Dating App Disasters",
+            "Workplace Gossip",
+            "Passive Aggressive Notes From Neighbors",
+            "Shower Thoughts",
+            "Things Said During Labor",
+            "Social Media Addictions",
+            "Things You've Secretly Judged People For",
+            "Things That Make You Go Hmm",
+            "Forbidden Love Stories",
+            "Guilty Netflix Binges",
+            "Regrettable Fashion Choices",
+            "Conspiracy Theories That Are Almost Believable",
+            "The Art of the Subtle Shade",
+            "Pet Peeves That Make You Question Humanity",
+            "Wine Mom Wisdom",
+            # --- 108 New Categories Added Below ---
+            "First World Problems",
+            "Zoom Meeting Fails",
+            "Influencer Scandals",
+            "Hashtag Fails",
+            "Viral TikTok Challenges",
+            "Meme Overlords",
+            "Doomscrolling Habits",
+            "Autocorrect Fails",
+            "Spam Email Gems",
+            "Forgotten Social Media Platforms",
+            "Unsubscribe Reasons",
+            "Password Struggles",
+            "Wifi Password Requests",
+            "Reply All Disasters",
+            "Selfie Gone Wrong",
+            "Cancelled Celebrities",
+            "Streaming Service Overload",
+            "Fake News Headlines",
+            "Online Dating Profile Cliches",
+            "Urban Dictionary Gems",
+            "Bad Excuses",
+            "Awkward Silences",
+            "Public Transport Nightmares",
+            "Parenting Fails",
+            "Bad Gift Reactions",
+            "Jury Duty Thoughts",
+            "DIY Disasters",
+            "Overheard Conversations",
+            "Telemarketer Trolling",
+            "Group Chat Drama",
+            "Wedding Guest Complaints",
+            "Things Found Under the Couch",
+            "Reasons to Call in Sick",
+            "Gym Fails",
+            "Cooking Disasters",
+            "Kids Say the Darndest Things (Modern)",
+            "Terrible Pick-Up Lines",
+            "Misheard Song Lyrics",
+            "Running Late Excuses",
+            "Things You Pretend to Understand",
+            "Bad Date Stories",
+            "Reasons Your Ex is an Ex",
+            "Things Your Therapist Judges You For",
+            "Bachelorette Party Secrets",
+            "Dirty Laundry (Figurative)",
+            "Bar Fight Starters",
+            "Designated Driver Woes",
+            "Spring Break Regrets",
+            "Reasons to Break Up",
+            "Skeletons in the Closet",
+            "Worst Nightmares",
+            "Questionable Life Choices",
+            "Shady Business Practices",
+            "Things Overheard in a Bar Bathroom",
+            "Last Call Regrets",
+            "Craigslist Missed Connections",
+            "Black Market Bargains",
+            "Secrets From Your Bartender",
+            "Ways to Get Fired",
+            "Retro Gaming Nostalgia",
+            "90s Kid Problems",
+            "Forgotten TV Shows",
+            "Reality TV Villains",
+            "Catchphrases That Won't Die",
+            "One Hit Wonders",
+            "Childhood Toys You Miss",
+            "Boy Band Obsessions",
+            "Movie Quotes You Use Daily",
+            "Things That Were Cool in High School",
+            "Boomer Complaints",
+            "Gen X Angst",
+            "Internet Challenges of Yesteryear",
+            "Old Tech Struggles",
+            "Things That Peaked in the 2000s",
+            "Cult Classic Movies",
+            "Annoying Jingles",
+            "Unpopular Opinions (Pop Culture)",
+            "Things Overhyped by Media",
+            "Celebrity Couple Nicknames",
+            "Late Night Snack Cravings",
+            "Diet Fails",
+            "Brunch Obsessions",
+            "Craft Beer Snobbery",
+            "Exotic Food Challenges",
+            "Reasons to Order Takeout",
+            "Bad Restaurant Experiences",
+            "Things You Shouldn't Microwave",
+            "Food Coma Symptoms",
+            "Weird Food Combinations",
+            "Potluck Disasters",
+            "Office Fridge Violations",
+            "Hangry Confessions",
+            "Complaints to the Chef",
+            "Things You Only Eat When Drunk",
+            "Things That Sound Dirty But Aren't",
+            "Unspoken Rules",
+            "Daily Annoyances",
+            "Small Victories",
+            "Reasons to Stay in Bed",
+            "Florida Man Headlines",
+            "If Animals Could Talk",
+            "Signs You're Getting Old",
+            "Pet Shaming Reasons",
+            "Things That Need a Warning Label",
+            "Useless Superpowers",
+            "Ways to Annoy People",
+            "What Your Car Says About You",
+            "Things That Are Overpriced"
+        ]
+
+        self.focus_strings = [
+            "Focus the puzzle on humor.",
+            "Focus the puzzle on a pet.",
+            "Focus the puzzle on eating.",
+            "Emphasize a surprising element in the puzzle.",
+            "Consider a common daily activity for the puzzle's theme.",
+            "Make the puzzle thought-provoking or clever."
+        ]
 
         self.recently_used_phrases = []
         self.max_recent_phrases = 15
-        self.max_retry_attempts = 3  # NEW: Maximum number of retries for duplicate phrases
+        self.max_retry_attempts = 3
 
     def _add_to_recent_phrases(self, phrase):
         """Adds a phrase to the list of recently used phrases, maintaining max size."""
@@ -94,7 +212,10 @@ class PuzzleGenerator:
         """
         Creates a prompt for the LLM to generate an emoji puzzle for a specific category.
         Asks for JSON output and strongly encourages variety, avoiding specified previous phrases.
+        Includes a randomly chosen dynamic focus hint for Dynamic Prompt Augmentation.
         """
+        dynamic_focus_hint = random.choice(self.focus_strings)
+
         if previous_phrases is None:
             previous_phrases = []
 
@@ -108,11 +229,12 @@ class PuzzleGenerator:
             )
 
         prompt = (
+            f"Creative Hint for this request: \"{dynamic_focus_hint}\"\n"
             f"Your task is to generate a puzzle based on a common phrase from the category: '{category}'.\n"
             "The phrase must consist of 3 words or less (e.g., 1, 2, or 3 words).\n"
-            "**The phrase absolutely MUST be common, widely known, and popular saying. No obscure or niche terms, " # MODIFIED
-            "especially if the category is broad. Focus on phrases that a general audience would recognize.**\n" # MODIFIED
-            "**It is absolutely ESSENTIAL that you provide a new, unique, and creative example each time you are called.**"
+            "**The phrase absolutely MUST be common, widely known, and popular saying. No obscure or niche terms, "
+            "especially if the category is broad. Focus on phrases that a general audience would recognize.**\n"
+            f"**It is absolutely ESSENTIAL that you provide a new, unique, and creative example each time you are called (especially considering this hint: \"{dynamic_focus_hint}\").**"
             f"{avoid_phrases_instruction}\n\n"
             "Provide your response exclusively in a VALID JSON format with the following keys:\n"
             "1. 'phrase': The full solution phrase (string).\n"
@@ -225,7 +347,6 @@ class PuzzleGenerator:
         print(f"Requesting puzzle for randomly selected category: '{current_category}'")
         print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}")
 
-        # Retry loop for duplicate validation
         for attempt in range(self.max_retry_attempts):
             print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}")
             
@@ -237,11 +358,9 @@ class PuzzleGenerator:
             
             generated_phrase = parsed_details['phrase']
             
-            # Check if this phrase is already in our recently used list
             if generated_phrase in self.recently_used_phrases:
                 print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.")
                 
-                # If this is the last attempt, we'll use it anyway
                 if attempt == self.max_retry_attempts - 1:
                     print(f"Max retries reached. Using duplicate phrase: {generated_phrase}")
                     self._add_to_recent_phrases(generated_phrase)
@@ -251,13 +370,11 @@ class PuzzleGenerator:
                     print("Retrying to get a unique phrase...")
                     continue
             else:
-                # Success! We have a unique phrase
                 print(f"✅ Unique phrase generated: {generated_phrase}")
                 self._add_to_recent_phrases(generated_phrase)
                 print(f"Successfully parsed puzzle details: {parsed_details}")
                 return parsed_details
         
-        # If we've exhausted all retries without success
         print(f"Failed to generate a valid puzzle after {self.max_retry_attempts} attempts.")
         return None
 
@@ -265,12 +382,14 @@ class PuzzleGenerator:
 if __name__ == "__main__":
     print("Starting Puzzle Generator Test (JSON version with Random Category Selection and Retry Validation)...")
 
-    generator = PuzzleGenerator(model_name="gemma3:27b")
+    generator = PuzzleGenerator(model_name="gemma3:27b") # Or your preferred model
 
     if not generator.connector or not generator.connector.get_models():
          print("Could not connect to Ollama or no models available.")
     else:
-        num_test_puzzles = len(generator.categories)
+        # You can adjust num_test_puzzles for more or less extensive testing
+        num_test_puzzles = 20 # Example: generate 20 puzzles
+        print(f"Total categories available: {len(generator.categories)}")
         print(f"Will attempt to generate {num_test_puzzles} puzzles with random category selection.")
 
         for i in range(num_test_puzzles):
@@ -278,9 +397,9 @@ if __name__ == "__main__":
             puzzle_details = generator.generate_parsed_puzzle_details()
             if puzzle_details:
                 print("\nSuccessfully generated and parsed puzzle details:")
+                print(f"  Category: {puzzle_details['category']}")
                 print(f"  Phrase: {puzzle_details['phrase']}")
                 print(f"  Words: {puzzle_details['words']}")
-                print(f"  Category: {puzzle_details['category']}")
                 print(f"  Emojis: {puzzle_details['emojis_list']}")
             else:
                 print("\nCould not generate or parse puzzle details.")
