@@ -22,8 +22,8 @@ body {
 }
 
 .game-header {
-    margin-bottom: 25px;
-    padding-bottom: 15px;
+    margin-bottom: 10px; /* Was 25px */
+    padding-bottom: 10px; /* Was 15px */
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -44,7 +44,7 @@ body {
 }
 
 .puzzle-area {
-    margin-bottom: 25px;
+    margin-bottom: 10px; /* Was 25px */
 }
 
 .emoji-puzzle-display {
@@ -86,7 +86,7 @@ body {
     justify-content: center;
     align-items: center;
     color: #333;
-    margin-bottom: 25px;
+    margin-bottom: 25px; /* This remains as it's space below the revealed phrase, before the input */
 }
 
 .phrase-display .word {
@@ -116,7 +116,7 @@ body {
 }
 
 .interaction-area {
-    margin-bottom: 25px;
+    margin-bottom: 10px; /* Was 25px */
 }
 
 .guess-section {
@@ -218,7 +218,7 @@ body {
 .new-puzzle-button-bottom {
     background-color: #4CAF50; /* Green for new puzzle */
     display: block; /* Make it block to center with margin auto */
-    margin: 20px auto 0 auto; /* Center it */
+    margin: 10px auto 0 auto; /* Was 20px auto 0 auto */
 }
 
 .new-puzzle-button-bottom:hover {

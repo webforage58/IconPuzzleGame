@@ -54,6 +54,7 @@ button {
 #new-puzzle-button {
     background-color: #1a73e8;
     color: white;
+    margin-top: 5px; /* Added to reduce top margin, bottom margin will be 10px from 'button' rule */
 }
 
 #new-puzzle-button:active {
@@ -184,7 +185,7 @@ button {
 /* Hide interaction area if needed */
 .interaction-area {
     width: 100%;
-    margin: 20px 0;
+    margin: 10px 0; /* Was 20px 0 */
 }
 
 /* Mobile Hint Controls Layout */
