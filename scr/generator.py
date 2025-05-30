@@ -21,7 +21,7 @@ class PuzzleGenerator:
 
         self.categories = [
     "Toxic Relationship Red Flags",
-    "Netflix and Chill Euphemisms",
+    "Divorce Lawyer Gold",
     "Walk of Shame Essentials",
     "Tinder Bio Lies",
     "Quarantine Confessions",
@@ -56,19 +56,23 @@ class PuzzleGenerator:
     "Reality TV Drama",
     "Conspiracy Theories",
     "Superhero Innuendos",
-    "Adult Swim Cartoons",
+    "Awkward Family Holiday Moments",
     "Vegas Stories",
     "Bachelor Party Mishaps",
     "Dating App Disasters",
     "Workplace Gossip",
-    "Midnight Snacks",
+    "Passive Aggressive Notes From Neighbors",
     "Shower Thoughts",
-    "Zoom Meeting Fails",
+    "Things Said During Labor",
     "Social Media Addictions",
-    "Existential Crises",
+    "Things You've Secretly Judged People For",
     "Things That Make You Go Hmm",
     "Forbidden Love Stories",
     "Guilty Netflix Binges",
+    "Regrettable Fashion Choices",
+    "Conspiracy Theories That Are Almost Believable",
+    "The Art of the Subtle Shade",
+    "Pet Peeves That Make You Question Humanity",
     "Wine Mom Wisdom"
 ]
 
