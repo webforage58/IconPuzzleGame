@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageDisplay = document.getElementById('message-display');
         const scoreDisplay = document.getElementById('score-display');
         const newPuzzleButton = document.getElementById('new-puzzle-button');
+        
+        // Letter Hint DOM Elements
+        const letterHintButton = document.getElementById('letter-hint-button');
+        const letterHintsUsedDisplay = document.getElementById('letter-hints-used-display');
 
         // --- Game State Variables ---
         let currentPuzzle = null;
@@ -22,6 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const HINT_INTERVAL_SECONDS = 15;
         let timeToNextHintTick = HINT_INTERVAL_SECONDS;
         let isHintPaused = false;
+        
+        // Letter Hint Variables
+        let revealedLetterPositions = []; // Array of {wordIndex, letterIndex} objects
+        let letterHintsUsed = 0;
+        const MAX_LETTER_HINTS = 3;
+        const LETTER_HINT_COST = 5;
 
         // --- CORE UI Update Functions ---
         function updateScoreDisplay() {
@@ -42,30 +52,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function renderPhraseDisplay() {
             if (!currentPuzzle || !phraseDisplay || !currentPuzzle.words) {
-                if(phraseDisplay) phraseDisplay.innerHTML = ''; // Clear if no puzzle
+                if(phraseDisplay) phraseDisplay.innerHTML = '';
                 return;
             }
-            phraseDisplay.innerHTML = ''; // Clear previous phrase
+            phraseDisplay.innerHTML = '';
 
-            currentPuzzle.words.forEach((word, index) => {
+            currentPuzzle.words.forEach((word, wordIndex) => {
                 const wordDiv = document.createElement('div');
                 wordDiv.classList.add('word');
 
-                if (revealedWordsIndices.includes(index)) {
+                if (revealedWordsIndices.includes(wordIndex)) {
+                    // Entire word is revealed
                     wordDiv.textContent = word;
                 } else {
-                    // Display blanks for unrevealed words
-                    for (let i = 0; i < word.length; i++) {
+                    // Show individual letters/blanks
+                    for (let letterIndex = 0; letterIndex < word.length; letterIndex++) {
                         const letterSpan = document.createElement('span');
-                        letterSpan.classList.add('letter-blank');
-                        letterSpan.textContent = '_';
+                        
+                        const isLetterRevealed = revealedLetterPositions.some(
+                            pos => pos.wordIndex === wordIndex && pos.letterIndex === letterIndex
+                        );
+                        
+                        if (isLetterRevealed) {
+                            letterSpan.textContent = word[letterIndex];
+                            letterSpan.classList.add('letter-hinted');
+                        } else {
+                            letterSpan.classList.add('letter-blank');
+                            letterSpan.textContent = '_';
+                        }
                         wordDiv.appendChild(letterSpan);
                     }
                 }
                 phraseDisplay.appendChild(wordDiv);
-                // Add a space after each word div, except the last one
-                if (index < currentPuzzle.words.length - 1) {
-                     const space = document.createTextNode('\u00A0'); // Non-breaking space
+                
+                if (wordIndex < currentPuzzle.words.length - 1) {
+                     const space = document.createTextNode('\u00A0');
                      phraseDisplay.appendChild(space);
                 }
             });
@@ -73,6 +94,59 @@ document.addEventListener('DOMContentLoaded', function() {
         
         function updateHintTimerDisplay(value) {
             if (hintTimerDisplay) hintTimerDisplay.textContent = value;
+        }
+
+        // --- Letter Hint Functions ---
+        function updateLetterHintDisplay() {
+            if (letterHintsUsedDisplay) {
+                letterHintsUsedDisplay.textContent = letterHintsUsed;
+            }
+            if (letterHintButton) {
+                letterHintButton.disabled = letterHintsUsed >= MAX_LETTER_HINTS || 
+                                           currentTotalScore < LETTER_HINT_COST ||
+                                           !currentPuzzle;
+            }
+        }
+
+        function getAvailableLetterPositions() {
+            const availablePositions = [];
+            if (!currentPuzzle || !currentPuzzle.words) return availablePositions;
+            
+            currentPuzzle.words.forEach((word, wordIndex) => {
+                if (!revealedWordsIndices.includes(wordIndex)) {
+                    for (let letterIndex = 0; letterIndex < word.length; letterIndex++) {
+                        const alreadyRevealed = revealedLetterPositions.some(
+                            pos => pos.wordIndex === wordIndex && pos.letterIndex === letterIndex
+                        );
+                        if (!alreadyRevealed) {
+                            availablePositions.push({ wordIndex, letterIndex });
+                        }
+                    }
+                }
+            });
+            return availablePositions;
+        }
+
+        function revealRandomLetter() {
+            const availablePositions = getAvailableLetterPositions();
+            if (availablePositions.length === 0) {
+                displayMessage('No more letters to reveal!', 'info');
+                return;
+            }
+            
+            const randomPosition = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+            revealedLetterPositions.push(randomPosition);
+            
+            letterHintsUsed++;
+            currentTotalScore = Math.max(0, currentTotalScore - LETTER_HINT_COST);
+            
+            updateScoreDisplay();
+            updateLetterHintDisplay();
+            renderPhraseDisplay();
+            
+            const word = currentPuzzle.words[randomPosition.wordIndex];
+            const letter = word[randomPosition.letterIndex];
+            displayMessage(`Letter hint: "${letter}" revealed! (-${LETTER_HINT_COST} points)`, 'info');
         }
 
         // --- Hint Logic Functions ---
@@ -210,6 +284,8 @@ document.addEventListener('DOMContentLoaded', function() {
         function resetForNewPuzzle() {
             console.log("Full script: Resetting for new puzzle.");
             revealedWordsIndices = [];
+            revealedLetterPositions = []; // Reset letter hints
+            letterHintsUsed = 0; // Reset letter hint counter
             currentPuzzleBasePoints = 100;
             isHintPaused = false;
             if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Hints';
@@ -217,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (submitGuessButton) submitGuessButton.disabled = false;
             timeToNextHintTick = HINT_INTERVAL_SECONDS; 
             updateHintTimerDisplay(timeToNextHintTick); // Initialize display
+            updateLetterHintDisplay(); // Update letter hint display
             displayMessage('');
         }
 
@@ -297,6 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayMessage(`Correct! +${currentPuzzleBasePoints} points. Solution: ${currentPuzzle.phrase}`, 'success');
                 }
                 updateScoreDisplay();
+                updateLetterHintDisplay(); // Refresh letter hint button state
                 if (submitGuessButton) submitGuessButton.disabled = true; 
                 revealedWordsIndices = currentPuzzle.words.map((_, i) => i); 
                 renderPhraseDisplay(); // Show full phrase
@@ -308,12 +386,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // --- Initialization ---
         function initializeGame() {
-            console.log("Full script: Initializing new game...");
-            updateScoreDisplay();
-            fetchNewPuzzle();    
-            if (guessInput) guessInput.value = '';
-            if (submitGuessButton) submitGuessButton.disabled = false;
-        }
+                console.log("Full script: Initializing new game...");
+
+                // Give the player some starting points
+                currentTotalScore = 25; // Example: Start with 25 points (enough for 5 letter hints)
+
+                updateScoreDisplay(); // Display the initial score
+
+                // updateLetterHintDisplay will now check against the new starting score.
+                // If 25 >= LETTER_HINT_COST (5), the button will be enabled,
+                // assuming a puzzle loads correctly and has hintable letters.
+                updateLetterHintDisplay();
+
+                fetchNewPuzzle(); // This will handle the rest of the setup including calling updateLetterHintDisplay again after puzzle load
+
+                if (guessInput) guessInput.value = '';
+                // Submit button will be enabled by fetchNewPuzzle on success
+            }
+
 
         // --- Event Listeners ---
         console.log("Full script: Setting up event listeners...");
@@ -341,6 +431,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             console.error("Full script Error: Pause/Resume Hints button not found!");
         }
+        
+        // Letter Hint Event Listener
+        if (letterHintButton) {
+            letterHintButton.addEventListener('click', revealRandomLetter);
+        } else {
+            console.error("Full script Error: Letter Hint button not found!");
+        }
+        
         console.log("Full script: Event listeners setup complete.");
 
         // --- Start the game ---
