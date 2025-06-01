@@ -1012,17 +1012,18 @@ class PuzzleGenerator:
             "Luxury Rip-offs & Costly Kicks (That Aren't Worth the Climax)",
             "Items That Cost Way Too Much Money",
             "AI Thinks Your Time is Overpriced (Just Kidding, Play More!)"
-        ]
+        ] #
         self.focus_strings = [
             "Focus the puzzle on humor.", "Focus the puzzle on a pet.", "Focus the puzzle on eating.",
             "Emphasize a surprising element in the puzzle.",
             "Consider a common daily activity for the puzzle's theme.",
             "Make the puzzle thought-provoking or clever."
-        ]
+        ] #
 
-        self.recently_used_phrases = []
-        self.max_recent_phrases = 15
-        self.max_retry_attempts = 3
+        self.recently_used_phrases = [] #
+        self.max_recent_phrases = 15 #
+        self.max_retry_attempts = 3 #
+        self.max_category_variant_attempts = 2 # New: Max attempts for category variant generation
 
     def _add_to_recent_phrases(self, phrase):
         if not phrase:
@@ -1033,7 +1034,6 @@ class PuzzleGenerator:
         if len(self.recently_used_phrases) > self.max_recent_phrases:
             self.recently_used_phrases.pop(0)
 
-    # Updated method signature and data logged
     def _log_puzzle_to_csv(self, category, phrase, emojis_string,
                            solved_correctly, letter_hints_used, 
                            puzzle_score, total_score_at_end):
@@ -1057,8 +1057,45 @@ class PuzzleGenerator:
         except Exception as e:
             print(f"An unexpected error occurred during CSV logging: {e}")
 
+    def _create_category_variant_prompt(self, base_category):
+        """Creates a prompt to ask the LLM for a creative variant of a base category."""
+        prompt = (
+            f"You are tasked with creating a NEW and UNIQUE category name that is a creative variation of the provided 'Base Category'.\n"
+            f"This new category name will be used to generate an emoji puzzle based on a common phrase.\n\n"
+            f"Guidelines for the new category name:\n"
+            f"- It MUST be different from the 'Base Category'.\n"
+            f"- It should be closely related to the 'Base Category' in theme.\n"
+            f"- It should inspire different common phrases than the 'Base Category' would.\n"
+            f"- It should be concise and suitable as a game category title (e.g., 3-6 words long).\n"
+            f"- Respond ONLY with the new category name. Do not include any other text, explanation, or quotation marks around the response.\n\n"
+            f"Base Category: '{base_category}'\n\n"
+            f"New Unique Variant Category:"
+        )
+        return prompt
+
+    def _generate_category_variant(self, base_category):
+        """Attempts to generate a unique variant for the given base category using the LLM."""
+        print(f"Attempting to generate a variant for base category: '{base_category}'")
+        for attempt in range(self.max_category_variant_attempts):
+            prompt_text = self._create_category_variant_prompt(base_category)
+            variant_response = self.connector.enhance_prompt(self.model_name, prompt_text, prompt_type="general")
+
+            if variant_response and not variant_response.startswith("Error:") and not variant_response.startswith("No response from model"):
+                cleaned_variant = variant_response.strip().replace('"', '')
+                # Basic validation: not empty, different from base (case-insensitive), and a reasonable length
+                if cleaned_variant and cleaned_variant.lower() != base_category.lower() and len(cleaned_variant) > 5:
+                    print(f"Successfully generated variant category: '{cleaned_variant}' for base: '{base_category}'")
+                    return cleaned_variant
+                else:
+                    print(f"Variant generation attempt {attempt + 1} for '{base_category}' was invalid, too similar, or too short: '{variant_response}'")
+            else:
+                print(f"Failed to get a valid response from LLM for category variant generation (attempt {attempt + 1}): {variant_response}")
+        
+        print(f"Failed to generate a unique variant for '{base_category}' after {self.max_category_variant_attempts} attempts. Falling back to base category.")
+        return base_category # Fallback to original if all attempts fail
+
     def _create_emoji_puzzle_prompt_v2(self, category, previous_phrases=None):
-        dynamic_focus_hint = random.choice(self.focus_strings)
+        dynamic_focus_hint = random.choice(self.focus_strings) #
         if previous_phrases is None: previous_phrases = []
         avoid_phrases_instruction = ""
         if previous_phrases:
@@ -1087,12 +1124,12 @@ class PuzzleGenerator:
         )
         return prompt
 
-    def _generate_single_puzzle_attempt(self, current_category):
-        prompt_text = self._create_emoji_puzzle_prompt_v2(current_category, self.recently_used_phrases)
+    def _generate_single_puzzle_attempt(self, current_category_for_puzzle):
+        # current_category_for_puzzle is the (potentially variant) category to be used for this attempt
+        prompt_text = self._create_emoji_puzzle_prompt_v2(current_category_for_puzzle, self.recently_used_phrases)
         response_text = self.connector.enhance_prompt(self.model_name, prompt_text, prompt_type="general")
 
         if response_text and not response_text.startswith("Error:") and not response_text.startswith("No response from model"):
-            # print(f"Raw LLM response for puzzle details:\n'{response_text}'") # Optional: keep for debugging if needed
             try:
                 cleaned_response = response_text.strip()
                 if cleaned_response.startswith("```json"): cleaned_response = cleaned_response[len("```json"):].strip()
@@ -1102,55 +1139,55 @@ class PuzzleGenerator:
                 puzzle_data = json.loads(cleaned_response)
                 required_keys = ['phrase', 'words', 'category', 'emojis']
                 if not all(key in puzzle_data for key in required_keys):
-                    # print(f"Error: LLM response JSON is missing one or more required keys. Data: {puzzle_data}") # Optional
                     return None
-                if puzzle_data.get('category') != current_category:
-                    # print(f"Warning: LLM returned category '{puzzle_data.get('category')}' but category '{current_category}' was requested. Using requested category.") #Optional
-                    puzzle_data['category'] = current_category # Correcting category mismatch
+                
+                # Critical: Ensure the category in the output is the one we used for the prompt (the variant)
+                puzzle_data['category'] = current_category_for_puzzle 
+                
                 if not isinstance(puzzle_data['words'], list) or not puzzle_data['words']:
-                    # print(f"Error: 'words' field is not a non-empty list. Data: {puzzle_data}") # Optional
                     return None
                 if not all(isinstance(word, str) for word in puzzle_data['words']):
-                    # print(f"Error: Not all items in 'words' field are strings. Data: {puzzle_data}") # Optional
                     return None
                 generated_phrase = puzzle_data.get('phrase')
                 if not generated_phrase:
-                     # print(f"Error: 'phrase' field is missing or empty. Data: {puzzle_data}") # Optional
                      return None
                 emoji_char_list = [emoji for emoji in puzzle_data['emojis'].split(' ') if emoji]
                 if not emoji_char_list:
-                    # print(f"Warning: LLM response had an empty emoji string after parsing: '{puzzle_data['emojis']}'") # Optional
                     return None
+                
                 parsed_details = {
                     'phrase': puzzle_data['phrase'], 'words': puzzle_data['words'],
                     'category': puzzle_data['category'], 'emojis_list': emoji_char_list
                 }
                 return parsed_details
-            except json.JSONDecodeError as e:
-                # print(f"Error decoding JSON from LLM response: {e}\nProblematic response text: '{cleaned_response}'") # Optional
+            except json.JSONDecodeError:
                 return None
-            except Exception as e:
-                # print(f"An unexpected error occurred during puzzle parsing: {e}") # Optional
+            except Exception:
                 return None
         else:
-            # print(f"Failed to generate puzzle details. LLM Response: {response_text}") # Optional
             return None
 
     def generate_parsed_puzzle_details(self):
         if not self.model_name and (not self.connector or not self.connector.get_models()):
-            # print("Error: No LLM model is configured or ModelConnector not properly initialized.") # Optional
             return None
         if not self.categories:
-            # print("Error: No categories defined for puzzle generation.") # Optional
             return None
 
-        current_category = random.choice(self.categories)
-        # print(f"Requesting puzzle for randomly selected category: '{current_category}'") # Optional
+        base_category = random.choice(self.categories) #
+        print(f"Selected base category: '{base_category}'")
+
+        # Step 1: Generate a variant of the category
+        current_puzzle_category = self._generate_category_variant(base_category)
+        # current_puzzle_category is now either the variant or the base_category (if fallback)
+        print(f"Using category for puzzle generation: '{current_puzzle_category}'")
+        
         # print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}") # Optional
 
-        for attempt in range(self.max_retry_attempts):
+        for attempt in range(self.max_retry_attempts): #
             # print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}") # Optional
-            parsed_details = self._generate_single_puzzle_attempt(current_category)
+            
+            # Pass the (potentially variant) current_puzzle_category to the attempt method
+            parsed_details = self._generate_single_puzzle_attempt(current_puzzle_category) 
             
             if parsed_details is None:
                 # print(f"Attempt {attempt + 1} failed to generate valid puzzle details.") # Optional
@@ -1158,12 +1195,18 @@ class PuzzleGenerator:
             
             generated_phrase = parsed_details['phrase']
             
-            if generated_phrase in self.recently_used_phrases:
+            # Ensure the category in parsed_details is what we used (the variant or fallback)
+            # This should be handled by _generate_single_puzzle_attempt, but double-check
+            if parsed_details['category'] != current_puzzle_category:
+                print(f"Warning: Category mismatch after puzzle attempt. Expected '{current_puzzle_category}', got '{parsed_details['category']}'. Overwriting.")
+                parsed_details['category'] = current_puzzle_category
+
+
+            if generated_phrase in self.recently_used_phrases: #
                 # print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.") # Optional
                 if attempt == self.max_retry_attempts - 1:
                     # print(f"Max retries reached. Using duplicate phrase: {generated_phrase}") # Optional
                     self._add_to_recent_phrases(generated_phrase)
-                    # CSV LOGGING IS NO LONGER DONE HERE
                     # print(f"Successfully parsed puzzle details (with duplicate warning): {parsed_details}") # Optional
                     return parsed_details
                 else:
@@ -1172,7 +1215,6 @@ class PuzzleGenerator:
             else:
                 # print(f"✅ Unique phrase generated: {generated_phrase}") # Optional
                 self._add_to_recent_phrases(generated_phrase)
-                # CSV LOGGING IS NO LONGER DONE HERE
                 # print(f"Successfully parsed puzzle details: {parsed_details}") # Optional
                 return parsed_details
         
@@ -1182,15 +1224,14 @@ class PuzzleGenerator:
 # --- Main execution for testing (optional) ---
 if __name__ == "__main__":
     print("Starting Puzzle Generator Test (CSV Logging now triggered by backend API)...")
-    generator = PuzzleGenerator(model_name="gemma3:27b")
+    generator = PuzzleGenerator(model_name="gemma3:27b") #
 
     if not generator.connector or not generator.connector.get_models():
          print("Could not connect to Ollama or no models available.")
     else:
-        print(f"Puzzle Generator initialized. CSV log target: {generator.csv_log_file_path}")
-        print(f"CSV Header: {generator.csv_header}")
+        print(f"Puzzle Generator initialized. CSV log target: {generator.csv_log_file_path}") #
+        print(f"CSV Header: {generator.csv_header}") #
         
-        # Test the logging function directly (simulating a call from app.py)
         print("\nSimulating a call to _log_puzzle_to_csv (as if from app.py after a puzzle round):")
         generator._log_puzzle_to_csv(
             category="Test Category",
@@ -1200,7 +1241,7 @@ if __name__ == "__main__":
             letter_hints_used=1,
             puzzle_score=85,
             total_score_at_end=1085
-        )
+        ) #
         generator._log_puzzle_to_csv(
             category="Another Category",
             phrase="Test Phrase Failed",
@@ -1208,21 +1249,21 @@ if __name__ == "__main__":
             solved_correctly="no",
             letter_hints_used=3,
             puzzle_score=0,
-            total_score_at_end=1085 # Assuming score didn't change or was penalized back
-        )
-        print(f"Test log entries should be in {generator.csv_log_file_path}")
+            total_score_at_end=1085 
+        ) #
+        print(f"Test log entries should be in {generator.csv_log_file_path}") #
 
-        # The generate_parsed_puzzle_details no longer logs directly.
-        # It just generates puzzle data.
         print("\n--- Generating a test puzzle (logging will occur via backend API in real app) ---")
-        puzzle_details = generator.generate_parsed_puzzle_details()
-        if puzzle_details:
-            print("\nSuccessfully generated (but not yet logged by this script):")
-            print(f"  Category: {puzzle_details['category']}")
-            print(f"  Phrase: {puzzle_details['phrase']}")
-            print(f"  Emojis: {puzzle_details['emojis_list']}")
-        else:
-            print("\nCould not generate test puzzle details.")
+        for i in range(3): # Generate a few puzzles to see variant logic
+            print(f"\n--- Test Generation Run {i+1} ---")
+            puzzle_details = generator.generate_parsed_puzzle_details() #
+            if puzzle_details:
+                print("\nSuccessfully generated (but not yet logged by this script):")
+                print(f"  Category Used: {puzzle_details['category']}") #
+                print(f"  Phrase: {puzzle_details['phrase']}") #
+                print(f"  Emojis: {puzzle_details['emojis_list']}") #
+            else:
+                print("\nCould not generate test puzzle details for this run.")
         print("--------------------------------------")
 
     print("\nPuzzle Generator Test Finished.")
