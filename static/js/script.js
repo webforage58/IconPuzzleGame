@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function togglePauseHints() {
             if (!currentPuzzle) return;
             isHintPaused = !isHintPaused;
-            if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = isHintPaused ? 'Resume Hints' : 'Pause Hints';
+            if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = isHintPaused ? 'Resume Game' : 'Pause Game';
             if (isHintPaused) {
                 clearTimeout(hintTimeoutId); 
                 updateHintTimerDisplay('Paused');
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             letterHintsUsed = 0;
             currentPuzzleBasePoints = 100;
             isHintPaused = false;
-            if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Hints';
+            if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Game';
             if (guessInput) guessInput.value = '';
             if (submitGuessButton) submitGuessButton.disabled = false;
             timeToNextHintTick = HINT_INTERVAL_SECONDS; 

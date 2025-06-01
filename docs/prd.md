@@ -58,7 +58,7 @@ This section adds individual letter hints to complement the existing word hints 
     - **Add Letter Hint Button** to the hint controls section:
       ```html
       <div class="hint-controls">
-          <button id="pause-resume-hints-button">Pause Hints</button>
+          <button id="pause-resume-hints-button">Pause Game</button>
           <button id="letter-hint-button">💡 Letter Hint</button>
           <div>Time to next hint: <span id="hint-timer-display">--</span>s</div>
           <div>Letter hints used: <span id="letter-hints-used-display">0</span>/3</div>
@@ -257,7 +257,7 @@ This section adds individual letter hints to complement the existing word hints 
           letterHintsUsed = 0; // Add this line
           currentPuzzleBasePoints = 100;
           isHintPaused = false;
-          if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Hints';
+          if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Game';
           if (guessInput) guessInput.value = '';
           if (submitGuessButton) submitGuessButton.disabled = false;
           timeToNextHintTick = HINT_INTERVAL_SECONDS;
