@@ -4,8 +4,8 @@ from model_connector import ModelConnector
 import json
 import random
 import os
-import csv # Added for CSV logging
-from datetime import datetime # Added for timestamping
+import csv
+from datetime import datetime
 
 class PuzzleGenerator:
     def __init__(self, model_name="gemma3:27b"):
@@ -14,12 +14,16 @@ class PuzzleGenerator:
         
         # --- CSV Logging Setup ---
         self.csv_log_file_path = "/Users/johnhuberd/PythonProjects/ConcentrationGameWeb/puzzle_log.csv"
-        self.csv_header = ["Timestamp", "Category", "Phrase", "Emojis"]
+        # Updated CSV Header
+        self.csv_header = [
+            "Timestamp", "Category", "Phrase", "Emojis",
+            "SolvedCorrectly", "LetterHintsUsed", "PuzzleScore", "TotalScoreAtEnd"
+        ] 
         
         log_dir = os.path.dirname(self.csv_log_file_path)
         if log_dir and not os.path.exists(log_dir):
             try:
-                os.makedirs(log_dir, exist_ok=True) # exist_ok=True prevents error if dir exists
+                os.makedirs(log_dir, exist_ok=True) 
                 print(f"Created log directory: {log_dir}")
             except OSError as e:
                 print(f"Warning: Could not create log directory {log_dir}. Error: {e}")
@@ -105,10 +109,16 @@ class PuzzleGenerator:
         if len(self.recently_used_phrases) > self.max_recent_phrases:
             self.recently_used_phrases.pop(0)
 
-    def _log_puzzle_to_csv(self, category, phrase, emojis_string):
-        """Appends the successfully generated puzzle details to a CSV log file."""
+    # Updated method signature and data logged
+    def _log_puzzle_to_csv(self, category, phrase, emojis_string,
+                           solved_correctly, letter_hints_used, 
+                           puzzle_score, total_score_at_end):
+        """Appends the puzzle generation and play details to a CSV log file."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        row_to_log = [timestamp, category, phrase, emojis_string]
+        row_to_log = [
+            timestamp, category, phrase, emojis_string,
+            solved_correctly, letter_hints_used, puzzle_score, total_score_at_end
+        ]
         
         file_exists = os.path.isfile(self.csv_log_file_path)
         
@@ -116,7 +126,7 @@ class PuzzleGenerator:
             with open(self.csv_log_file_path, 'a', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 if not file_exists or os.path.getsize(self.csv_log_file_path) == 0:
-                    writer.writerow(self.csv_header) # Write header if new file or empty
+                    writer.writerow(self.csv_header) 
                 writer.writerow(row_to_log)
         except IOError as e:
             print(f"Error writing to CSV log file {self.csv_log_file_path}: {e}")
@@ -157,11 +167,8 @@ class PuzzleGenerator:
         prompt_text = self._create_emoji_puzzle_prompt_v2(current_category, self.recently_used_phrases)
         response_text = self.connector.enhance_prompt(self.model_name, prompt_text, prompt_type="general")
 
-        # Note: Raw LLM response logging is removed as per new request.
-        # CSV logging will happen after successful parsing.
-
         if response_text and not response_text.startswith("Error:") and not response_text.startswith("No response from model"):
-            print(f"Raw LLM response for puzzle details:\n'{response_text}'")
+            # print(f"Raw LLM response for puzzle details:\n'{response_text}'") # Optional: keep for debugging if needed
             try:
                 cleaned_response = response_text.strip()
                 if cleaned_response.startswith("```json"): cleaned_response = cleaned_response[len("```json"):].strip()
@@ -171,24 +178,24 @@ class PuzzleGenerator:
                 puzzle_data = json.loads(cleaned_response)
                 required_keys = ['phrase', 'words', 'category', 'emojis']
                 if not all(key in puzzle_data for key in required_keys):
-                    print(f"Error: LLM response JSON is missing one or more required keys. Data: {puzzle_data}")
+                    # print(f"Error: LLM response JSON is missing one or more required keys. Data: {puzzle_data}") # Optional
                     return None
                 if puzzle_data.get('category') != current_category:
-                    print(f"Warning: LLM returned category '{puzzle_data.get('category')}' but category '{current_category}' was requested. Using requested category.")
-                    puzzle_data['category'] = current_category
+                    # print(f"Warning: LLM returned category '{puzzle_data.get('category')}' but category '{current_category}' was requested. Using requested category.") #Optional
+                    puzzle_data['category'] = current_category # Correcting category mismatch
                 if not isinstance(puzzle_data['words'], list) or not puzzle_data['words']:
-                    print(f"Error: 'words' field is not a non-empty list. Data: {puzzle_data}")
+                    # print(f"Error: 'words' field is not a non-empty list. Data: {puzzle_data}") # Optional
                     return None
                 if not all(isinstance(word, str) for word in puzzle_data['words']):
-                    print(f"Error: Not all items in 'words' field are strings. Data: {puzzle_data}")
+                    # print(f"Error: Not all items in 'words' field are strings. Data: {puzzle_data}") # Optional
                     return None
                 generated_phrase = puzzle_data.get('phrase')
                 if not generated_phrase:
-                     print(f"Error: 'phrase' field is missing or empty. Data: {puzzle_data}")
+                     # print(f"Error: 'phrase' field is missing or empty. Data: {puzzle_data}") # Optional
                      return None
                 emoji_char_list = [emoji for emoji in puzzle_data['emojis'].split(' ') if emoji]
                 if not emoji_char_list:
-                    print(f"Warning: LLM response had an empty emoji string after parsing: '{puzzle_data['emojis']}'")
+                    # print(f"Warning: LLM response had an empty emoji string after parsing: '{puzzle_data['emojis']}'") # Optional
                     return None
                 parsed_details = {
                     'phrase': puzzle_data['phrase'], 'words': puzzle_data['words'],
@@ -196,87 +203,102 @@ class PuzzleGenerator:
                 }
                 return parsed_details
             except json.JSONDecodeError as e:
-                print(f"Error decoding JSON from LLM response: {e}\nProblematic response text: '{cleaned_response}'")
+                # print(f"Error decoding JSON from LLM response: {e}\nProblematic response text: '{cleaned_response}'") # Optional
                 return None
             except Exception as e:
-                print(f"An unexpected error occurred during puzzle parsing: {e}")
+                # print(f"An unexpected error occurred during puzzle parsing: {e}") # Optional
                 return None
         else:
-            print(f"Failed to generate puzzle details. LLM Response: {response_text}")
+            # print(f"Failed to generate puzzle details. LLM Response: {response_text}") # Optional
             return None
 
     def generate_parsed_puzzle_details(self):
         if not self.model_name and (not self.connector or not self.connector.get_models()):
-            print("Error: No LLM model is configured or ModelConnector not properly initialized.")
+            # print("Error: No LLM model is configured or ModelConnector not properly initialized.") # Optional
             return None
         if not self.categories:
-            print("Error: No categories defined for puzzle generation.")
+            # print("Error: No categories defined for puzzle generation.") # Optional
             return None
 
         current_category = random.choice(self.categories)
-        print(f"Requesting puzzle for randomly selected category: '{current_category}'")
-        print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}")
+        # print(f"Requesting puzzle for randomly selected category: '{current_category}'") # Optional
+        # print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}") # Optional
 
         for attempt in range(self.max_retry_attempts):
-            print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}")
+            # print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}") # Optional
             parsed_details = self._generate_single_puzzle_attempt(current_category)
             
             if parsed_details is None:
-                print(f"Attempt {attempt + 1} failed to generate valid puzzle details.")
+                # print(f"Attempt {attempt + 1} failed to generate valid puzzle details.") # Optional
                 continue
             
             generated_phrase = parsed_details['phrase']
             
             if generated_phrase in self.recently_used_phrases:
-                print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.")
+                # print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.") # Optional
                 if attempt == self.max_retry_attempts - 1:
-                    print(f"Max retries reached. Using duplicate phrase: {generated_phrase}")
+                    # print(f"Max retries reached. Using duplicate phrase: {generated_phrase}") # Optional
                     self._add_to_recent_phrases(generated_phrase)
-                    # --- Log to CSV ---
-                    emojis_string = " ".join(parsed_details['emojis_list'])
-                    self._log_puzzle_to_csv(parsed_details['category'], parsed_details['phrase'], emojis_string)
-                    # --- End Log to CSV ---
-                    print(f"Successfully parsed puzzle details (with duplicate warning): {parsed_details}")
+                    # CSV LOGGING IS NO LONGER DONE HERE
+                    # print(f"Successfully parsed puzzle details (with duplicate warning): {parsed_details}") # Optional
                     return parsed_details
                 else:
-                    print("Retrying to get a unique phrase...")
+                    # print("Retrying to get a unique phrase...") # Optional
                     continue
             else:
-                print(f"✅ Unique phrase generated: {generated_phrase}")
+                # print(f"✅ Unique phrase generated: {generated_phrase}") # Optional
                 self._add_to_recent_phrases(generated_phrase)
-                # --- Log to CSV ---
-                emojis_string = " ".join(parsed_details['emojis_list'])
-                self._log_puzzle_to_csv(parsed_details['category'], parsed_details['phrase'], emojis_string)
-                # --- End Log to CSV ---
-                print(f"Successfully parsed puzzle details: {parsed_details}")
+                # CSV LOGGING IS NO LONGER DONE HERE
+                # print(f"Successfully parsed puzzle details: {parsed_details}") # Optional
                 return parsed_details
         
-        print(f"Failed to generate a valid puzzle after {self.max_retry_attempts} attempts.")
+        # print(f"Failed to generate a valid puzzle after {self.max_retry_attempts} attempts.") # Optional
         return None
 
 # --- Main execution for testing (optional) ---
 if __name__ == "__main__":
-    print("Starting Puzzle Generator Test (CSV Logging Version)...")
+    print("Starting Puzzle Generator Test (CSV Logging now triggered by backend API)...")
     generator = PuzzleGenerator(model_name="gemma3:27b")
 
     if not generator.connector or not generator.connector.get_models():
          print("Could not connect to Ollama or no models available.")
     else:
-        num_test_puzzles = 3
-        print(f"Total categories available: {len(generator.categories)}")
-        print(f"Will attempt to generate {num_test_puzzles} puzzles.")
-        print(f"Puzzle details will be logged to CSV: {generator.csv_log_file_path}")
+        print(f"Puzzle Generator initialized. CSV log target: {generator.csv_log_file_path}")
+        print(f"CSV Header: {generator.csv_header}")
+        
+        # Test the logging function directly (simulating a call from app.py)
+        print("\nSimulating a call to _log_puzzle_to_csv (as if from app.py after a puzzle round):")
+        generator._log_puzzle_to_csv(
+            category="Test Category",
+            phrase="Test Phrase Solved",
+            emojis_string="🧪 ✅ 👍",
+            solved_correctly="yes",
+            letter_hints_used=1,
+            puzzle_score=85,
+            total_score_at_end=1085
+        )
+        generator._log_puzzle_to_csv(
+            category="Another Category",
+            phrase="Test Phrase Failed",
+            emojis_string="🧪 ❌ 👎",
+            solved_correctly="no",
+            letter_hints_used=3,
+            puzzle_score=0,
+            total_score_at_end=1085 # Assuming score didn't change or was penalized back
+        )
+        print(f"Test log entries should be in {generator.csv_log_file_path}")
 
-        for i in range(num_test_puzzles):
-            print(f"\n--- Generating puzzle attempt {i+1}/{num_test_puzzles} ---")
-            puzzle_details = generator.generate_parsed_puzzle_details()
-            if puzzle_details:
-                print("\nSuccessfully generated and parsed puzzle details (also logged to CSV):")
-                print(f"  Category: {puzzle_details['category']}")
-                print(f"  Phrase: {puzzle_details['phrase']}")
-                print(f"  Words: {puzzle_details['words']}")
-                print(f"  Emojis: {puzzle_details['emojis_list']}")
-            else:
-                print("\nCould not generate or parse puzzle details.")
-            print("--------------------------------------")
-    print("\nPuzzle Generator Test (CSV Logging Version) Finished.")
+        # The generate_parsed_puzzle_details no longer logs directly.
+        # It just generates puzzle data.
+        print("\n--- Generating a test puzzle (logging will occur via backend API in real app) ---")
+        puzzle_details = generator.generate_parsed_puzzle_details()
+        if puzzle_details:
+            print("\nSuccessfully generated (but not yet logged by this script):")
+            print(f"  Category: {puzzle_details['category']}")
+            print(f"  Phrase: {puzzle_details['phrase']}")
+            print(f"  Emojis: {puzzle_details['emojis_list']}")
+        else:
+            print("\nCould not generate test puzzle details.")
+        print("--------------------------------------")
+
+    print("\nPuzzle Generator Test Finished.")
