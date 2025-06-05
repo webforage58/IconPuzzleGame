@@ -39,6 +39,31 @@
             </div>
         </header>
 
+        <!-- NEW: Progress Timeline Component -->
+        <div class="progress-timeline">
+            <div class="step current" data-step="1">New Puzzle</div>
+            <div class="step upcoming" data-step="2">1st Letter</div>
+            <div class="step upcoming" data-step="3">2nd Letter</div>
+            <div class="step upcoming" data-step="4">3rd Letter</div>
+            <div class="step upcoming" data-step="5">1st Word</div>
+            <div class="step upcoming" data-step="6">2nd Word</div>
+            <div class="step upcoming" data-step="7">3rd Word</div>
+            <div class="step upcoming" data-step="8">Answer</div>
+        </div>
+
+        <!-- NEW: Step Status Panel -->
+        <div class="step-status-panel playing">
+            <div class="current-step">
+                <strong>Current:</strong> <span id="current-step-name">New Puzzle</span>
+            </div>
+            <div class="next-step">
+                <strong>Next:</strong> <span id="next-step-name">1st Letter Hint</span>
+            </div>
+            <div class="points-available">
+                <strong>Points Available:</strong> <span id="points-available">100</span>
+            </div>
+        </div>
+
         <div class="puzzle-area">
             <div id="emoji-display" class="emoji-puzzle-display">
                 Loading emojis...

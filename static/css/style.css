@@ -13,7 +13,8 @@ body {
 
 .game-container {
     width: 90%;
-    max-width: 700px;
+    max-width: 850px; /* Increased from 700px for better timeline display */
+    min-height: 900px; /* Set minimum height for consistent layout */
     background-color: white;
     padding: 25px 30px;
     border-radius: 12px;
@@ -41,6 +42,99 @@ body {
 
 #score-display {
     color: #1a73e8;
+}
+
+/* NEW: Progress Timeline Component Styling */
+.progress-timeline {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 10px;
+    background: linear-gradient(to right, #e0e0e0, #f5f5f5);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.step {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    min-width: 60px;
+    text-align: center;
+    cursor: default;
+}
+
+.step.completed { 
+    background-color: #4CAF50; 
+    color: white; 
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+}
+
+.step.current { 
+    background-color: #2196F3; 
+    color: white; 
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
+    transform: scale(1.05);
+}
+
+.step.upcoming { 
+    background-color: #e0e0e0; 
+    color: #666; 
+}
+
+/* NEW: Step Status Panel Styling */
+.step-status-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.step-status-panel.playing { 
+    background-color: #e3f2fd; 
+    border-color: #2196F3;
+}
+
+.step-status-panel.completed { 
+    background-color: #e8f5e8; 
+    border-color: #4CAF50;
+}
+
+.step-status-panel.abandoned { 
+    background-color: #ffebee; 
+    border-color: #f44336;
+}
+
+.current-step, .next-step, .points-available {
+    flex: 1;
+    text-align: center;
+}
+
+.current-step strong, .next-step strong, .points-available strong {
+    color: #555;
+}
+
+#current-step-name {
+    color: #2196F3;
+    font-weight: 600;
+}
+
+#next-step-name {
+    color: #666;
+    font-weight: 500;
+}
+
+#points-available {
+    color: #4CAF50;
+    font-weight: 700;
+    font-size: 16px;
 }
 
 .puzzle-area {
