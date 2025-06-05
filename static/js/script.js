@@ -184,6 +184,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ).length;
         }
 
+        function areAllWordsRevealed() {
+            if (!currentPuzzle || !currentPuzzle.words) return false;
+            return revealedWordsIndices.length === currentPuzzle.words.length;
+        }
+
         function shouldTriggerFinalAnswer(nextStepType) {
             if (nextStepType !== 'word') return false;
             
@@ -308,6 +313,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderPhraseDisplay();
                 currentPuzzleBasePoints = Math.max(0, currentPuzzleBasePoints - 10); 
                 displayMessage(`Hint: Word revealed! Puzzle points now: ${currentPuzzleBasePoints}`, 'info');
+                
+                // NEW: Check if all words are now revealed
+                if (areAllWordsRevealed()) {
+                    // All words revealed - game should end
+                    gamePhase = 'abandoned';
+                    maxAvailablePoints = 0;
+                    updateHintTimerDisplay('All words revealed');
+                    stopHintTimer();
+                    displayMessage(`All words revealed! Puzzle completed with 0 points. Answer: ${currentPuzzle.phrase}`, 'error');
+                    updateAllUI();
+                    
+                    // Log the result
+                    if (currentPuzzle && !isCurrentPuzzleLogged) {
+                        const allWordsRevealedData = {
+                            category: currentPuzzle.category,
+                            phrase: currentPuzzle.phrase,
+                            emojis_list: currentPuzzle.emojis_list,
+                            solvedCorrectly: "no",
+                            letterHintsUsed: letterHintsUsed,
+                            puzzleScore: 0,
+                            totalScoreAtEnd: currentTotalScore
+                        };
+                        logPuzzleResultToServer(allWordsRevealedData);
+                        isCurrentPuzzleLogged = true;
+                    }
+                    return;
+                }
             }
             let allWordsNowRevealed = currentPuzzle.words.every((_, i) => revealedWordsIndices.includes(i));
             if (allWordsNowRevealed) {
@@ -443,6 +475,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 revealedWordsIndices.push(wordToRevealIndex);
                 renderPhraseDisplay();
                 displayMessage(`Word hint: "${currentPuzzle.words[wordToRevealIndex]}" revealed!`, 'info');
+                
+                // NEW: Check if all words are now revealed
+                if (areAllWordsRevealed()) {
+                    // All words revealed - game should end, player gets 0 points
+                    gamePhase = 'abandoned';
+                    maxAvailablePoints = 0;
+                    displayMessage(`All words revealed! Puzzle completed with 0 points. Answer: ${currentPuzzle.phrase}`, 'error');
+                    updateAllUI();
+                    
+                    // Log the result as completed with 0 points
+                    if (currentPuzzle && !isCurrentPuzzleLogged) {
+                        const allWordsRevealedData = {
+                            category: currentPuzzle.category,
+                            phrase: currentPuzzle.phrase,
+                            emojis_list: currentPuzzle.emojis_list,
+                            solvedCorrectly: "no", // All words revealed = not solved by player
+                            letterHintsUsed: letterHintsUsed,
+                            puzzleScore: 0,
+                            totalScoreAtEnd: currentTotalScore
+                        };
+                        logPuzzleResultToServer(allWordsRevealedData);
+                        isCurrentPuzzleLogged = true;
+                    }
+                }
             }
         }
 
@@ -547,12 +603,28 @@ document.addEventListener('DOMContentLoaded', function() {
             pauseResumeButton.textContent = isHintPaused ? 'Resume Game' : 'Pause Game';
             pauseResumeButton.disabled = (gamePhase === 'completed' || gamePhase === 'abandoned' || gamePhase === 'final_answer');
             
-            // Submit button during final answer
+            // Submit button during final answer and when all words revealed
             if (submitGuessButton) {
-                if (gamePhase === 'final_answer') {
+                const allWordsRevealed = areAllWordsRevealed();
+                
+                if (allWordsRevealed) {
+                    // All words revealed - disable submit button
+                    submitGuessButton.disabled = true;
+                    submitGuessButton.style.backgroundColor = '#ccc'; // Gray for disabled
+                    submitGuessButton.textContent = 'All Words Revealed';
+                } else if (gamePhase === 'final_answer') {
+                    // Final answer countdown
+                    submitGuessButton.disabled = false;
                     submitGuessButton.style.backgroundColor = '#f44336'; // Red for urgency
                     submitGuessButton.textContent = 'SUBMIT FINAL ANSWER!';
+                } else if (gamePhase === 'completed' || gamePhase === 'abandoned') {
+                    // Game over
+                    submitGuessButton.disabled = true;
+                    submitGuessButton.style.backgroundColor = ''; // Reset to default
+                    submitGuessButton.textContent = 'Submit Guess';
                 } else {
+                    // Normal gameplay
+                    submitGuessButton.disabled = false;
                     submitGuessButton.style.backgroundColor = ''; // Reset to default
                     submitGuessButton.textContent = 'Submit Guess';
                 }
@@ -643,9 +715,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // --- UPDATED: Guess Handling (with final answer logic) ---
+        // --- UPDATED: Guess Handling (with final answer logic and all-words-revealed check) ---
         function handleSubmitGuess() {
             if (!currentPuzzle || !guessInput || !submitGuessButton || isCurrentPuzzleLogged) { 
+                return;
+            }
+
+            // NEW: Check if all words are already revealed - if so, player cannot submit
+            if (areAllWordsRevealed()) {
+                displayMessage('Cannot submit answer! All words have been revealed through hints.', 'error');
                 return;
             }
 
