@@ -15,7 +15,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const letterHintButton = document.getElementById('letter-hint-button');
         const letterHintsUsedDisplay = document.getElementById('letter-hints-used-display');
 
-        // --- Game State Variables ---
+        // --- NEW: Step-Based Game State Variables ---
+        let currentStep = 1; // Steps 1-8
+        let maxAvailablePoints = 100; // Decreases with each step
+        let gamePhase = 'playing'; // 'playing', 'completed', 'abandoned'
+        let stepsCompleted = []; // Array to track which steps are done
+
+        // --- NEW: Step Configuration Object ---
+        const GAME_STEPS = {
+            1: { name: 'New Puzzle', points: 100, type: 'start' },
+            2: { name: '1st Letter Hint', points: 90, type: 'letter' },
+            3: { name: '2nd Letter Hint', points: 80, type: 'letter' },
+            4: { name: '3rd Letter Hint', points: 70, type: 'letter' },
+            5: { name: '1st Word Hint', points: 60, type: 'word' },
+            6: { name: '2nd Word Hint', points: 50, type: 'word' },
+            7: { name: '3rd Word Hint', points: 40, type: 'word' },
+            8: { name: 'Reveal Answer', points: 0, type: 'reveal' }
+        };
+
+        // --- EXISTING: Original Game State Variables ---
         let currentPuzzle = null;
         let revealedWordsIndices = [];
         let currentTotalScore = 0;
@@ -29,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const MAX_LETTER_HINTS = 3;
         const LETTER_HINT_COST = 5;
 
-        let isCurrentPuzzleLogged = false; // NEW: Flag to track if current puzzle result is logged
+        let isCurrentPuzzleLogged = false; // Flag to track if current puzzle result is logged
 
         // --- Helper Function to Log Puzzle Result to Server ---
         async function logPuzzleResultToServer(logData) {
@@ -225,6 +243,22 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // --- NEW: Step-Based Functions (Initial Implementation) ---
+        function resetStepBasedState() {
+            currentStep = 1;
+            maxAvailablePoints = 100;
+            gamePhase = 'playing';
+            stepsCompleted = [];
+            console.log('Step-based state reset - Current Step:', currentStep, 'Max Points:', maxAvailablePoints);
+        }
+
+        function updateMaxAvailablePoints() {
+            if (GAME_STEPS[currentStep]) {
+                maxAvailablePoints = GAME_STEPS[currentStep].points;
+                console.log(`Step ${currentStep}: ${GAME_STEPS[currentStep].name} - Max Points: ${maxAvailablePoints}`);
+            }
+        }
+
         // --- Puzzle Fetching & Setup ---
         function resetForNewPuzzle() {
             revealedWordsIndices = [];
@@ -239,7 +273,10 @@ document.addEventListener('DOMContentLoaded', function() {
             updateHintTimerDisplay(timeToNextHintTick);
             updateLetterHintDisplay();
             displayMessage('');
-            isCurrentPuzzleLogged = false; // NEW: Reset logged flag for the new puzzle
+            isCurrentPuzzleLogged = false; // Reset logged flag for the new puzzle
+            
+            // NEW: Reset step-based state
+            resetStepBasedState();
         }
 
         async function fetchNewPuzzle() {
@@ -274,11 +311,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPuzzle = await response.json();
 
                 if (currentPuzzle && currentPuzzle.emojis_list && currentPuzzle.phrase && currentPuzzle.words && Array.isArray(currentPuzzle.words)) {
-                    resetForNewPuzzle(); // This will set isCurrentPuzzleLogged to false
+                    resetForNewPuzzle(); // This will set isCurrentPuzzleLogged to false and reset step state
                     if (emojiDisplay) emojiDisplay.textContent = currentPuzzle.emojis_list.join(' ');
                     if (categoryText) categoryText.textContent = currentPuzzle.category;
                     renderPhraseDisplay();
                     startHintTimer(); 
+                    
+                    // NEW: Log step completion
+                    console.log(`New puzzle loaded - Step ${currentStep}: ${GAME_STEPS[currentStep].name}`);
                 } else {
                     throw new Error("Invalid puzzle data received from server.");
                 }
@@ -313,11 +353,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (userGuess === solutionPhrase) {
                 stopHintTimer();
-                puzzleScoreForLog = currentPuzzleBasePoints; // Score from puzzle itself
+                
+                // NEW: Use step-based scoring instead of time-based
+                puzzleScoreForLog = maxAvailablePoints; // Score from current step
                 currentTotalScore += puzzleScoreForLog;
                 
                 let messageText = `Correct! +${puzzleScoreForLog} points. Solution: ${currentPuzzle.phrase}`;
-                if (currentPuzzleBasePoints === 100) { // Assuming 100 is initial max before any word hints
+                if (maxAvailablePoints === 100) { // If solved at step 1 (full points)
                     currentTotalScore += 50; // Speed bonus
                     messageText = `Correct! +${puzzleScoreForLog} points +50 bonus! Solution: ${currentPuzzle.phrase}`;
                 }
@@ -327,6 +369,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (submitGuessButton) submitGuessButton.disabled = true; 
                 revealedWordsIndices = currentPuzzle.words.map((_, i) => i); 
                 renderPhraseDisplay();
+
+                // NEW: Update game phase
+                gamePhase = 'completed';
+                console.log(`Puzzle solved at step ${currentStep} for ${puzzleScoreForLog} points`);
 
                 // --- Log correct guess ---
                 const solvedPuzzleData = {
@@ -353,6 +399,10 @@ document.addEventListener('DOMContentLoaded', function() {
             currentTotalScore = 25; 
             updateScoreDisplay();
             updateLetterHintDisplay();
+            
+            // NEW: Initialize step-based state
+            resetStepBasedState();
+            
             fetchNewPuzzle(); 
             if (guessInput) guessInput.value = '';
         }
