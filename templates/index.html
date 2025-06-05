@@ -39,9 +39,9 @@
             </div>
         </header>
 
-        <!-- NEW: Progress Timeline Component -->
+        <!-- FIXED: Progress Timeline Component with "Start" instead of "New Puzzle" -->
         <div class="progress-timeline">
-            <div class="step current" data-step="1">New Puzzle</div>
+            <div class="step current" data-step="1">Start</div>
             <div class="step upcoming" data-step="2">1st Letter</div>
             <div class="step upcoming" data-step="3">2nd Letter</div>
             <div class="step upcoming" data-step="4">3rd Letter</div>
@@ -51,10 +51,10 @@
             <div class="step upcoming" data-step="8">Answer</div>
         </div>
 
-        <!-- NEW: Step Status Panel -->
+        <!-- UPDATED: Step Status Panel -->
         <div class="step-status-panel playing">
             <div class="current-step">
-                <strong>Current:</strong> <span id="current-step-name">New Puzzle</span>
+                <strong>Current:</strong> <span id="current-step-name">Start</span>
             </div>
             <div class="next-step">
                 <strong>Next:</strong> <span id="next-step-name">1st Letter Hint</span>
@@ -80,20 +80,42 @@
                 <input type="text" id="guess-input" placeholder="Enter your guess here" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <button id="submit-guess-button">Submit Guess</button>
             </div>
-            <div class="hint-controls">
+            
+            <!-- UPDATED: Progression Controls with moved New Puzzle button -->
+            <div class="progression-controls">
+                <button id="next-hint-button" class="primary-button">Next Hint</button>
+                <button id="skip-to-answer-button" class="secondary-button">Skip to Answer</button>
+                <button id="pause-resume-button" class="tertiary-button">Pause Game</button>
+                <!-- MOVED: New Puzzle button moved up for better visibility -->
+                <button id="new-puzzle-button" class="new-puzzle-button-inline">New Puzzle</button>
+            </div>
+            
+            <!-- OLD: Keep temporarily for transition (will be removed later) -->
+            <div class="hint-controls" style="display: none;">
                 <button id="pause-resume-hints-button">Pause Game</button>
                 <button id="letter-hint-button">💡 Letter Hint</button>
                 <div>Time to next hint: <span id="hint-timer-display">--</span>s</div>
                 <div>Letter hints used: <span id="letter-hints-used-display">0</span>/3</div>
             </div>
-            <div class="hint-info">
+            <div class="hint-info" style="display: none;">
                 <small>Letter hints cost 5 points each</small>
             </div>
+            
+            <!-- NEW: Final Answer Timer Display -->
+            <div id="final-answer-timer" class="final-answer-timer" style="display: none;">
+                <div class="timer-message">
+                    <strong>Final Answer Required!</strong>
+                </div>
+                <div class="timer-countdown">
+                    Time remaining: <span id="final-timer-display">10</span> seconds
+                </div>
+            </div>
+            
             <div id="message-display" class="message-display">
             </div>
         </div>
 
-        <button id="new-puzzle-button" class="new-puzzle-button-bottom">New Puzzle</button>
+        <!-- REMOVED: Old New Puzzle button location -->
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>

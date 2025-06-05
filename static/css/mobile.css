@@ -203,6 +203,36 @@ button {
     align-items: center;
 }
 
+/* NEW: Mobile Progression Controls Layout */
+.progression-controls {
+    flex-direction: column;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.progression-controls button {
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+    border-radius: 8px;
+}
+
+.progression-controls button:active {
+    transform: scale(0.98);
+}
+
+/* NEW: Mobile New Puzzle Button */
+.new-puzzle-button-inline {
+    width: 100% !important;
+    padding: 15px !important;
+    font-size: 16px !important;
+    margin: 12px 0 !important;
+}
+
+.new-puzzle-button-inline:active {
+    transform: scale(0.98);
+}
+
 /* Mobile Hint Info */
 .hint-info {
     font-size: 12px;
@@ -246,6 +276,27 @@ button {
 
     #points-available {
         font-size: 15px;
+    }
+
+    /* NEW: Mobile Progression Controls */
+    .progression-controls {
+        flex-direction: column;
+        gap: 15px;
+        margin: 15px 0;
+    }
+
+    .progression-controls button {
+        width: 100%;
+        padding: 15px;
+        font-size: 16px;
+    }
+
+    /* NEW: Mobile New Puzzle Button */
+    .new-puzzle-button-inline {
+        width: 100% !important;
+        padding: 15px !important;
+        font-size: 16px !important;
+        margin: 12px 0 !important;
     }
 }
 
@@ -308,6 +359,30 @@ button {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
+    }
+
+    /* NEW: Landscape Progression Controls */
+    .progression-controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 10px 0;
+    }
+
+    .progression-controls button {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    /* NEW: Landscape New Puzzle Button */
+    .new-puzzle-button-inline {
+        width: 100% !important;
+        padding: 10px 15px !important;
+        font-size: 14px !important;
+        margin: 8px 0 !important;
     }
     
     /* Compact progress timeline in landscape */

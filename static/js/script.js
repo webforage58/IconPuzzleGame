@@ -15,15 +15,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const letterHintButton = document.getElementById('letter-hint-button');
         const letterHintsUsedDisplay = document.getElementById('letter-hints-used-display');
 
-        // --- NEW: Step-Based Game State Variables ---
+        // --- Step-Based UI Elements ---
+        const nextHintButton = document.getElementById('next-hint-button');
+        const skipToAnswerButton = document.getElementById('skip-to-answer-button');
+        const pauseResumeButton = document.getElementById('pause-resume-button');
+        const currentStepNameDisplay = document.getElementById('current-step-name');
+        const nextStepNameDisplay = document.getElementById('next-step-name');
+        const pointsAvailableDisplay = document.getElementById('points-available');
+        const stepStatusPanel = document.querySelector('.step-status-panel');
+        const progressTimeline = document.querySelector('.progress-timeline');
+        
+        // --- NEW: Final Answer Timer Elements ---
+        const finalAnswerTimer = document.getElementById('final-answer-timer');
+        const finalTimerDisplay = document.getElementById('final-timer-display');
+
+        // --- Step-Based Game State Variables ---
         let currentStep = 1; // Steps 1-8
         let maxAvailablePoints = 100; // Decreases with each step
-        let gamePhase = 'playing'; // 'playing', 'completed', 'abandoned'
+        let gamePhase = 'playing'; // 'playing', 'completed', 'abandoned', 'final_answer'
         let stepsCompleted = []; // Array to track which steps are done
+        let finalAnswerTimeoutId = null; // Timer for final answer
+        let finalAnswerTimeRemaining = 10; // 10 seconds for final answer
 
-        // --- NEW: Step Configuration Object ---
+        // --- FIXED: Step Configuration Object (changed "New Puzzle" to "Start") ---
         const GAME_STEPS = {
-            1: { name: 'New Puzzle', points: 100, type: 'start' },
+            1: { name: 'Start', points: 100, type: 'start' },
             2: { name: '1st Letter Hint', points: 90, type: 'letter' },
             3: { name: '2nd Letter Hint', points: 80, type: 'letter' },
             4: { name: '3rd Letter Hint', points: 70, type: 'letter' },
@@ -33,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             8: { name: 'Reveal Answer', points: 0, type: 'reveal' }
         };
 
-        // --- EXISTING: Original Game State Variables ---
+        // --- Original Game State Variables ---
         let currentPuzzle = null;
         let revealedWordsIndices = [];
         let currentTotalScore = 0;
@@ -73,6 +89,106 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Fetch error while logging puzzle result:', error);
             }
+        }
+
+        // --- NEW: Final Answer Timer Functions ---
+        function startFinalAnswerTimer() {
+            if (finalAnswerTimeoutId) {
+                clearTimeout(finalAnswerTimeoutId);
+            }
+            
+            gamePhase = 'final_answer';
+            finalAnswerTimeRemaining = 10;
+            
+            if (finalAnswerTimer) {
+                finalAnswerTimer.style.display = 'block';
+            }
+            
+            updateFinalTimerDisplay();
+            updateAllUI();
+            
+            displayMessage('Final answer required! You have 10 seconds to submit your guess.', 'error');
+            
+            finalAnswerTimeoutId = setTimeout(finalAnswerTick, 1000);
+        }
+        
+        function finalAnswerTick() {
+            finalAnswerTimeRemaining--;
+            updateFinalTimerDisplay();
+            
+            if (finalAnswerTimeRemaining <= 0) {
+                handleFinalAnswerTimeout();
+            } else {
+                finalAnswerTimeoutId = setTimeout(finalAnswerTick, 1000);
+            }
+        }
+        
+        function updateFinalTimerDisplay() {
+            if (finalTimerDisplay) {
+                finalTimerDisplay.textContent = finalAnswerTimeRemaining;
+            }
+        }
+        
+        function stopFinalAnswerTimer() {
+            if (finalAnswerTimeoutId) {
+                clearTimeout(finalAnswerTimeoutId);
+                finalAnswerTimeoutId = null;
+            }
+            
+            if (finalAnswerTimer) {
+                finalAnswerTimer.style.display = 'none';
+            }
+        }
+        
+        function handleFinalAnswerTimeout() {
+            stopFinalAnswerTimer();
+            handlePuzzleLoss('Time ran out! No final answer submitted.');
+        }
+
+        // --- NEW: Game Loss Handler ---
+        function handlePuzzleLoss(lossMessage) {
+            gamePhase = 'abandoned';
+            maxAvailablePoints = 0;
+            
+            if (submitGuessButton) submitGuessButton.disabled = true;
+            
+            // Reveal the answer
+            revealedWordsIndices = currentPuzzle.words.map((_, i) => i);
+            renderPhraseDisplay();
+            
+            displayMessage(`${lossMessage} Answer: ${currentPuzzle.phrase}`, 'error');
+            updateAllUI();
+            
+            // Log the loss
+            if (currentPuzzle && !isCurrentPuzzleLogged) {
+                const lostPuzzleData = {
+                    category: currentPuzzle.category,
+                    phrase: currentPuzzle.phrase,
+                    emojis_list: currentPuzzle.emojis_list,
+                    solvedCorrectly: "no",
+                    letterHintsUsed: letterHintsUsed,
+                    puzzleScore: 0,
+                    totalScoreAtEnd: currentTotalScore
+                };
+                logPuzzleResultToServer(lostPuzzleData);
+                isCurrentPuzzleLogged = true;
+            }
+        }
+
+        // --- NEW: Helper Functions for Game Logic ---
+        function getUnrevealedWordCount() {
+            if (!currentPuzzle || !currentPuzzle.words) return 0;
+            
+            return currentPuzzle.words.filter((_, index) => 
+                !revealedWordsIndices.includes(index)
+            ).length;
+        }
+
+        function shouldTriggerFinalAnswer(nextStepType) {
+            if (nextStepType !== 'word') return false;
+            
+            const unrevealedWords = getUnrevealedWordCount();
+            return unrevealedWords === 1; // Only one word left unrevealed
         }
 
         // --- CORE UI Update Functions ---
@@ -175,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
             displayMessage(`Letter hint: "${letter}" revealed! (-${LETTER_HINT_COST} points)`, 'info');
         }
 
-        // --- Hint Logic Functions ---
+        // --- Original Hint Logic Functions (for backward compatibility) ---
         function stopHintTimer() {
             clearTimeout(hintTimeoutId);
             hintTimeoutId = null;
@@ -243,12 +359,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // --- NEW: Step-Based Functions (Initial Implementation) ---
+        // --- Step-Based Functions ---
         function resetStepBasedState() {
             currentStep = 1;
             maxAvailablePoints = 100;
             gamePhase = 'playing';
             stepsCompleted = [];
+            stopFinalAnswerTimer();
             console.log('Step-based state reset - Current Step:', currentStep, 'Max Points:', maxAvailablePoints);
         }
 
@@ -257,6 +374,196 @@ document.addEventListener('DOMContentLoaded', function() {
                 maxAvailablePoints = GAME_STEPS[currentStep].points;
                 console.log(`Step ${currentStep}: ${GAME_STEPS[currentStep].name} - Max Points: ${maxAvailablePoints}`);
             }
+        }
+
+        // --- UPDATED: Core Step Progression Functions (with gameplay fix) ---
+        function advanceToNextStep() {
+            if (currentStep < 8 && gamePhase === 'playing') {
+                if (!stepsCompleted.includes(currentStep)) {
+                    stepsCompleted.push(currentStep);
+                }
+                
+                const nextStep = currentStep + 1;
+                const nextStepInfo = GAME_STEPS[nextStep];
+                
+                // NEW: Check if next step would trigger final answer state
+                if (nextStepInfo && shouldTriggerFinalAnswer(nextStepInfo.type)) {
+                    displayMessage('Cannot reveal more words! You must submit your final answer now.', 'error');
+                    startFinalAnswerTimer();
+                    return;
+                }
+                
+                currentStep++;
+                updateMaxAvailablePoints();
+                executeCurrentStep();
+                updateAllUI();
+                console.log(`Advanced to Step ${currentStep}: ${GAME_STEPS[currentStep]?.name}`);
+            }
+        }
+
+        function executeCurrentStep() {
+            if (!currentPuzzle) return;
+            
+            switch(currentStep) {
+                case 2: case 3: case 4: // Letter hints
+                    revealNextLetterStep();
+                    break;
+                case 5: case 6: case 7: // Word hints
+                    revealNextWordStep();
+                    break;
+                case 8: // Reveal answer
+                    revealFullAnswer();
+                    break;
+            }
+        }
+
+        function revealNextLetterStep() {
+            const availablePositions = getAvailableLetterPositions();
+            if (availablePositions.length === 0) {
+                displayMessage('No more letters to reveal!', 'info');
+                return;
+            }
+            const randomPosition = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+            revealedLetterPositions.push(randomPosition);
+            renderPhraseDisplay();
+            const word = currentPuzzle.words[randomPosition.wordIndex];
+            const letter = word[randomPosition.letterIndex];
+            displayMessage(`Letter hint: "${letter}" revealed!`, 'info');
+        }
+
+        function revealNextWordStep() {
+            let wordToRevealIndex = -1;
+            for(let i = 0; i < currentPuzzle.words.length; i++) {
+                if(!revealedWordsIndices.includes(i)) { 
+                    wordToRevealIndex = i; 
+                    break; 
+                }
+            }
+            if (wordToRevealIndex !== -1) { 
+                revealedWordsIndices.push(wordToRevealIndex);
+                renderPhraseDisplay();
+                displayMessage(`Word hint: "${currentPuzzle.words[wordToRevealIndex]}" revealed!`, 'info');
+            }
+        }
+
+        function revealFullAnswer() {
+            stopFinalAnswerTimer();
+            revealedWordsIndices = currentPuzzle.words.map((_, i) => i);
+            renderPhraseDisplay();
+            gamePhase = 'completed';
+            maxAvailablePoints = 0;
+            displayMessage(`Answer revealed: ${currentPuzzle.phrase}`, 'info');
+            if (submitGuessButton) submitGuessButton.disabled = true;
+            updateAllUI();
+        }
+
+        function skipToAnswer() {
+            if (!currentPuzzle || (gamePhase !== 'playing' && gamePhase !== 'final_answer')) return;
+            currentStep = 8;
+            maxAvailablePoints = 0;
+            gamePhase = 'abandoned';
+            revealFullAnswer();
+            console.log('Skipped to answer - puzzle abandoned');
+        }
+
+        function togglePauseGame() {
+            if (!currentPuzzle) return;
+            
+            // Don't allow pausing during final answer timer
+            if (gamePhase === 'final_answer') {
+                displayMessage('Cannot pause during final answer countdown!', 'error');
+                return;
+            }
+            
+            isHintPaused = !isHintPaused;
+            updateAllUI();
+            displayMessage(isHintPaused ? 'Game Paused' : 'Game Resumed', 'info');
+        }
+
+        // --- UI Update Functions ---
+        function updateProgressTimeline() {
+            if (!progressTimeline) return;
+            const steps = progressTimeline.querySelectorAll('.step');
+            steps.forEach((stepElement, index) => {
+                const stepNumber = index + 1;
+                stepElement.className = 'step';
+                
+                if (stepsCompleted.includes(stepNumber) || (stepNumber < currentStep)) {
+                    stepElement.classList.add('completed');
+                } else if (stepNumber === currentStep) {
+                    stepElement.classList.add('current');
+                } else {
+                    stepElement.classList.add('upcoming');
+                }
+            });
+        }
+
+        function updateStepStatusPanel() {
+            if (!currentStepNameDisplay || !nextStepNameDisplay || !pointsAvailableDisplay || !stepStatusPanel) return;
+            
+            // Update step names
+            currentStepNameDisplay.textContent = GAME_STEPS[currentStep]?.name || 'Unknown';
+            
+            if (gamePhase === 'final_answer') {
+                nextStepNameDisplay.textContent = 'Submit Final Answer!';
+            } else {
+                const nextStep = currentStep < 8 ? currentStep + 1 : 8;
+                nextStepNameDisplay.textContent = currentStep < 8 ? GAME_STEPS[nextStep]?.name || 'Complete' : 'Complete';
+            }
+            
+            // Update points
+            pointsAvailableDisplay.textContent = maxAvailablePoints;
+            
+            // Update background color
+            stepStatusPanel.className = 'step-status-panel';
+            if (gamePhase === 'playing' || gamePhase === 'final_answer') {
+                stepStatusPanel.classList.add('playing');
+            } else if (gamePhase === 'completed') {
+                stepStatusPanel.classList.add('completed');
+            } else if (gamePhase === 'abandoned') {
+                stepStatusPanel.classList.add('abandoned');
+            }
+        }
+
+        function updateButtonStates() {
+            if (!nextHintButton || !skipToAnswerButton || !pauseResumeButton) return;
+            
+            // Next Hint button
+            const canAdvance = (currentStep < 8 && gamePhase === 'playing' && !isHintPaused);
+            nextHintButton.disabled = !canAdvance || gamePhase === 'final_answer';
+            
+            if (gamePhase === 'final_answer') {
+                nextHintButton.textContent = 'Submit Answer Required!';
+            } else if (currentStep >= 8) {
+                nextHintButton.textContent = 'Game Complete';
+            } else {
+                nextHintButton.textContent = 'Next Hint';
+            }
+            
+            // Skip to Answer button
+            skipToAnswerButton.disabled = (currentStep >= 8 || (gamePhase !== 'playing' && gamePhase !== 'final_answer'));
+            
+            // Pause/Resume button
+            pauseResumeButton.textContent = isHintPaused ? 'Resume Game' : 'Pause Game';
+            pauseResumeButton.disabled = (gamePhase === 'completed' || gamePhase === 'abandoned' || gamePhase === 'final_answer');
+            
+            // Submit button during final answer
+            if (submitGuessButton) {
+                if (gamePhase === 'final_answer') {
+                    submitGuessButton.style.backgroundColor = '#f44336'; // Red for urgency
+                    submitGuessButton.textContent = 'SUBMIT FINAL ANSWER!';
+                } else {
+                    submitGuessButton.style.backgroundColor = ''; // Reset to default
+                    submitGuessButton.textContent = 'Submit Guess';
+                }
+            }
+        }
+
+        function updateAllUI() {
+            updateProgressTimeline();
+            updateStepStatusPanel();
+            updateButtonStates();
+            updateScoreDisplay();
         }
 
         // --- Puzzle Fetching & Setup ---
@@ -268,15 +575,20 @@ document.addEventListener('DOMContentLoaded', function() {
             isHintPaused = false;
             if (pauseResumeHintsButton) pauseResumeHintsButton.textContent = 'Pause Game';
             if (guessInput) guessInput.value = '';
-            if (submitGuessButton) submitGuessButton.disabled = false;
+            if (submitGuessButton) {
+                submitGuessButton.disabled = false;
+                submitGuessButton.style.backgroundColor = ''; // Reset color
+                submitGuessButton.textContent = 'Submit Guess'; // Reset text
+            }
             timeToNextHintTick = HINT_INTERVAL_SECONDS; 
             updateHintTimerDisplay(timeToNextHintTick);
             updateLetterHintDisplay();
             displayMessage('');
             isCurrentPuzzleLogged = false; // Reset logged flag for the new puzzle
             
-            // NEW: Reset step-based state
+            // Reset step-based state and update UI
             resetStepBasedState();
+            updateAllUI();
         }
 
         async function fetchNewPuzzle() {
@@ -291,7 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     puzzleScore: 0, // No score for abandoned puzzle
                     totalScoreAtEnd: currentTotalScore // Score at the moment of abandonment
                 };
-                await logPuzzleResultToServer(abandonedPuzzleData); // Use await if you want to ensure it sends before proceeding
+                await logPuzzleResultToServer(abandonedPuzzleData);
                 isCurrentPuzzleLogged = true; // Mark as logged
             }
             // --- End logging abandoned puzzle ---
@@ -317,7 +629,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     renderPhraseDisplay();
                     startHintTimer(); 
                     
-                    // NEW: Log step completion
+                    // Update all UI elements for new puzzle
+                    updateAllUI();
                     console.log(`New puzzle loaded - Step ${currentStep}: ${GAME_STEPS[currentStep].name}`);
                 } else {
                     throw new Error("Invalid puzzle data received from server.");
@@ -330,9 +643,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // --- Guess Handling ---
+        // --- UPDATED: Guess Handling (with final answer logic) ---
         function handleSubmitGuess() {
-            if (!currentPuzzle || !guessInput || !submitGuessButton || isCurrentPuzzleLogged) { // Don't process if already logged
+            if (!currentPuzzle || !guessInput || !submitGuessButton || isCurrentPuzzleLogged) { 
                 return;
             }
 
@@ -352,9 +665,11 @@ document.addEventListener('DOMContentLoaded', function() {
             let puzzleScoreForLog = 0; // Default score for the puzzle if not solved
 
             if (userGuess === solutionPhrase) {
+                // Correct answer
                 stopHintTimer();
+                stopFinalAnswerTimer();
                 
-                // NEW: Use step-based scoring instead of time-based
+                // Use step-based scoring instead of time-based
                 puzzleScoreForLog = maxAvailablePoints; // Score from current step
                 currentTotalScore += puzzleScoreForLog;
                 
@@ -366,12 +681,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayMessage(messageText, 'success');
                 updateScoreDisplay();
                 updateLetterHintDisplay(); 
-                if (submitGuessButton) submitGuessButton.disabled = true; 
+                if (submitGuessButton) {
+                    submitGuessButton.disabled = true;
+                    submitGuessButton.style.backgroundColor = ''; // Reset color
+                    submitGuessButton.textContent = 'Submit Guess'; // Reset text
+                }
                 revealedWordsIndices = currentPuzzle.words.map((_, i) => i); 
                 renderPhraseDisplay();
 
-                // NEW: Update game phase
+                // Update game phase and UI
                 gamePhase = 'completed';
+                updateAllUI();
                 console.log(`Puzzle solved at step ${currentStep} for ${puzzleScoreForLog} points`);
 
                 // --- Log correct guess ---
@@ -386,11 +706,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 logPuzzleResultToServer(solvedPuzzleData);
                 isCurrentPuzzleLogged = true; // Mark as logged
-                // --- End logging ---
 
             } else {
-                displayMessage('Incorrect. Try again!', 'error');
-                // No logging here, as the puzzle is still active
+                // Incorrect answer
+                if (gamePhase === 'final_answer') {
+                    // Final answer was wrong - player loses
+                    stopFinalAnswerTimer();
+                    handlePuzzleLoss('Incorrect final answer!');
+                } else {
+                    displayMessage('Incorrect. Try again!', 'error');
+                }
             }
         }
 
@@ -400,8 +725,9 @@ document.addEventListener('DOMContentLoaded', function() {
             updateScoreDisplay();
             updateLetterHintDisplay();
             
-            // NEW: Initialize step-based state
+            // Initialize step-based state and UI
             resetStepBasedState();
+            updateAllUI();
             
             fetchNewPuzzle(); 
             if (guessInput) guessInput.value = '';
@@ -421,6 +747,14 @@ document.addEventListener('DOMContentLoaded', function() {
         else console.error("Pause/Resume Hints button not found!");
         if (letterHintButton) letterHintButton.addEventListener('click', revealRandomLetter);
         else console.error("Letter Hint button not found!");
+
+        // --- Step-Based Event Listeners ---
+        if (nextHintButton) nextHintButton.addEventListener('click', advanceToNextStep);
+        else console.error("Next Hint button not found!");
+        if (skipToAnswerButton) skipToAnswerButton.addEventListener('click', skipToAnswer);
+        else console.error("Skip to Answer button not found!");
+        if (pauseResumeButton) pauseResumeButton.addEventListener('click', togglePauseGame);
+        else console.error("Pause/Resume button not found!");
         
         initializeGame();
 
