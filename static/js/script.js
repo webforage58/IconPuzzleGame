@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const newPuzzleButton = document.getElementById('new-puzzle-button');
         const letterHintButton = document.getElementById('letter-hint-button');
         const letterHintsUsedDisplay = document.getElementById('letter-hints-used-display');
+        const explanationDisplay = document.getElementById('explanation-display'); // NEW Explanation Element
 
         // --- Step-Based UI Elements ---
         const nextHintButton = document.getElementById('next-hint-button');
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let gamePhase = 'playing'; // 'playing', 'completed', 'abandoned', 'final_answer'
         let stepsCompleted = []; // Array to track which steps are done
         let finalAnswerTimeoutId = null; // Timer for final answer
-        let finalAnswerTimeRemaining = 30; // 10 seconds for final answer
+        let finalAnswerTimeRemaining = 30; // 30 seconds for final answer
 
         // --- FIXED: Step Configuration Object (changed "New Puzzle" to "Start") ---
         const GAME_STEPS = {
@@ -64,6 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const LETTER_HINT_COST = 5;
 
         let isCurrentPuzzleLogged = false; // Flag to track if current puzzle result is logged
+        
+        // --- NEW: Function to display the puzzle explanation ---
+        function displayExplanation() {
+            if (explanationDisplay && currentPuzzle && currentPuzzle.explanation) {
+                explanationDisplay.innerHTML = `<strong>Explanation:</strong> ${currentPuzzle.explanation}`;
+                explanationDisplay.style.display = 'block';
+            }
+        }
 
         // --- Helper Function to Log Puzzle Result to Server ---
         async function logPuzzleResultToServer(logData) {
@@ -98,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             gamePhase = 'final_answer';
-            finalAnswerTimeRemaining = 30;
+            finalAnswerTimeRemaining = 10; // 10 seconds for final answer
             
             if (finalAnswerTimer) {
                 finalAnswerTimer.style.display = 'block';
@@ -157,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             renderPhraseDisplay();
             
             displayMessage(`${lossMessage} Answer: ${currentPuzzle.phrase}`, 'error');
+            displayExplanation(); // NEW: Show explanation on loss
             updateAllUI();
             
             // Log the loss
@@ -322,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateHintTimerDisplay('All words revealed');
                     stopHintTimer();
                     displayMessage(`All words revealed! Puzzle completed with 0 points. Answer: ${currentPuzzle.phrase}`, 'error');
+                    displayExplanation(); // NEW: Show explanation
                     updateAllUI();
                     
                     // Log the result
@@ -482,6 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     gamePhase = 'abandoned';
                     maxAvailablePoints = 0;
                     displayMessage(`All words revealed! Puzzle completed with 0 points. Answer: ${currentPuzzle.phrase}`, 'error');
+                    displayExplanation(); // NEW: Show explanation
                     updateAllUI();
                     
                     // Log the result as completed with 0 points
@@ -509,6 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
             gamePhase = 'completed';
             maxAvailablePoints = 0;
             displayMessage(`Answer revealed: ${currentPuzzle.phrase}`, 'info');
+            displayExplanation(); // NEW: Show explanation on reveal
             if (submitGuessButton) submitGuessButton.disabled = true;
             updateAllUI();
         }
@@ -656,6 +669,10 @@ document.addEventListener('DOMContentLoaded', function() {
             updateHintTimerDisplay(timeToNextHintTick);
             updateLetterHintDisplay();
             displayMessage('');
+            if (explanationDisplay) { // NEW: Hide and clear explanation
+                explanationDisplay.style.display = 'none';
+                explanationDisplay.innerHTML = '';
+            }
             isCurrentPuzzleLogged = false; // Reset logged flag for the new puzzle
             
             // Reset step-based state and update UI
@@ -757,6 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     messageText = `Correct! +${puzzleScoreForLog} points +50 bonus! Solution: ${currentPuzzle.phrase}`;
                 }
                 displayMessage(messageText, 'success');
+                displayExplanation(); // NEW: Show explanation on correct guess
                 updateScoreDisplay();
                 updateLetterHintDisplay(); 
                 if (submitGuessButton) {

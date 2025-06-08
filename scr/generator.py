@@ -1012,17 +1012,17 @@ class PuzzleGenerator:
             "Luxury Rip-offs & Costly Kicks (That Aren't Worth the Climax)",
             "Items That Cost Way Too Much Money",
             "AI Thinks Your Time is Overpriced (Just Kidding, Play More!)"
-        ] #
+        ]
         self.focus_strings = [
             "Focus the puzzle on humor.", "Focus the puzzle on a pet.", "Focus the puzzle on eating.",
             "Emphasize a surprising element in the puzzle.",
             "Consider a common daily activity for the puzzle's theme.",
             "Make the puzzle thought-provoking or clever."
-        ] #
+        ]
 
-        self.recently_used_phrases = [] #
-        self.max_recent_phrases = 15 #
-        self.max_retry_attempts = 3 #
+        self.recently_used_phrases = []
+        self.max_recent_phrases = 15
+        self.max_retry_attempts = 3
         self.max_category_variant_attempts = 2 # New: Max attempts for category variant generation
 
     def _add_to_recent_phrases(self, phrase):
@@ -1095,7 +1095,7 @@ class PuzzleGenerator:
         return base_category # Fallback to original if all attempts fail
 
     def _create_emoji_puzzle_prompt_v2(self, category, previous_phrases=None):
-        dynamic_focus_hint = random.choice(self.focus_strings) #
+        dynamic_focus_hint = random.choice(self.focus_strings)
         if previous_phrases is None: previous_phrases = []
         avoid_phrases_instruction = ""
         if previous_phrases:
@@ -1108,18 +1108,44 @@ class PuzzleGenerator:
         prompt = (
             f"Creative Hint for this request: \"{dynamic_focus_hint}\"\n"
             f"Your task is to generate a puzzle based on a common phrase from the category: '{category}'.\n"
-            "The phrase must consist of 3 words or less (e.g., 1, 2, or 3 words).\n"
-            "**The phrase absolutely MUST be common, widely known, and popular saying. No obscure or niche terms, "
-            "especially if the category is broad. Focus on phrases that a general audience would recognize.**\n"
-            f"**It is absolutely ESSENTIAL that you provide a new, unique, and creative example each time you are called (especially considering this hint: \"{dynamic_focus_hint}\").**"
-            f"{avoid_phrases_instruction}\n\n"
+            "---"
+            "### **1. Puzzle Rules**\n"
+            
+            "**A. Phrase Rules:**\n"
+            "- **Length:** The phrase must be between **2 and 4 words** long. This is a strict requirement.\n"
+            "- **Commonality:** The phrase **MUST** be a common, widely known, and popular English saying or concept. Avoid obscure terms, overly specific pop culture references, or simple descriptions. The goal is recognition by a general audience.\n"
+            
+            "**B. Relevance Rules:**\n"
+            "- **Category-Phrase Connection:** The phrase must be a direct and obvious example of the category. The connection must not be abstract or require a logical leap. For example, for the category `Toxic Relationship Red Flags`, the phrase `Love bombing` is an excellent fit. However, for the category `Wedding Guest Complaints`, the phrase `Bad dog` is a poor fit as the connection is unclear.\n"
+            
+            "**C. Emoji Rules:**\n"
+            "- **Count:** Provide a sequence of **4 to 5 emojis**.\n"
+            "- **Clarity:** The emojis must create a clear visual representation of the phrase. They should either represent the words literally (e.g., 'Sweet tooth' with 🍬🦷) or tell a simple, easy-to-understand story that leads to the phrase (e.g., 'Food baby' with 🤰🍔😴).\n"
+            "- **Relevance:** Every emoji must be directly relevant. Do not include random or confusing emojis that don't contribute to the phrase's meaning. For example, the puzzle `{Phrase: 'Burnt to a crisp', Emojis: '🔥 🐶 🥓'}` is bad because the dog emoji is irrelevant.\n\n"
+            
+            f"**D. Uniqueness Requirement:**\n"
+            f"- The puzzle must be a new, unique, and creative example. Consider this creative hint: \"{dynamic_focus_hint}\".\n"
+            f"- {avoid_phrases_instruction}\n\n"
+            
+            "---"
+            "### **2. Your Thought Process (Internal Monologue)**\n"
+            "Before generating the final JSON, perform an internal check. Ask yourself:\n"
+            "1. Is the phrase 2-4 words and very common?\n"
+            "2. Is the phrase a clear and direct example of the category?\n"
+            "3. Do my 4-5 emojis create a clear, simple story for the phrase? Is every emoji relevant?\n"
+            "4. Have I written a clear explanation for my emoji choices?\n"
+            "If the answer to any of these is no, you must start over and create a new puzzle.\n\n"
+
+            "---"
+            "### **3. JSON Output Format**\n"
             "Provide your response exclusively in a VALID JSON format with the following keys:\n"
             "1. 'phrase': The full solution phrase (string).\n"
             "2. 'words': A list of strings, where each string is a word from the phrase.\n"
             "3. 'category': This MUST be exactly '{category}' (string). Do not change this value.\n"
-            "4. 'emojis': A sequence of 3 to 5 emojis that represent the phrase, as a single string with emojis separated by spaces.\n"
-            "\nExample JSON output format (if the category requested was 'Idiom'):\n"
-            "```json\n{\n  \"phrase\": \"A blessing in disguise\",\n  \"words\": [\"A\", \"blessing\", \"in\", \"disguise\"],\n  \"category\": \"Idiom\",\n  \"emojis\": \"🙏 🎭 ✨\"\n}\n```\n"
+            "4. 'emojis': A sequence of 4 to 5 emojis that represent the phrase, as a single string with emojis separated by spaces.\n"
+            "5. 'explanation': A brief, 3-5 sentence explanation. It must first define the phrase or its origin. Then, it must explain why you chose the specific emojis and how they logically connect to the phrase.\n"
+            "\nExample JSON output format:\n"
+            "```json\n{{\n  \"phrase\": \"A blessing in disguise\",\n  \"words\": [\"A\", \"blessing\", \"in\", \"disguise\"],\n  \"category\": \"Idiom\",\n  \"emojis\": \"🙏 🎭 ✨\",\n  \"explanation\": \"A 'blessing in disguise' refers to something that seems bad or unlucky at first, but results in something good happening later. I chose the 'folded hands' emoji (🙏) to represent the 'blessing'. The 'performing arts masks' (🎭) symbolize the 'disguise', suggesting a hidden or dual nature. Finally, the 'sparkles' (✨) indicate the positive or magical outcome that is eventually revealed.\"\n}}\n```\n"
             f"Remember, the 'category' field in your JSON response must be exactly '{category}'. Only output the JSON object, nothing else before or after."
         )
         return prompt
@@ -1137,8 +1163,10 @@ class PuzzleGenerator:
                 if cleaned_response.endswith("```"): cleaned_response = cleaned_response[:-len("```")].strip()
 
                 puzzle_data = json.loads(cleaned_response)
-                required_keys = ['phrase', 'words', 'category', 'emojis']
+                # UPDATED: Add 'explanation' to required keys
+                required_keys = ['phrase', 'words', 'category', 'emojis', 'explanation']
                 if not all(key in puzzle_data for key in required_keys):
+                    print(f"Missing one of the required keys: {required_keys}")
                     return None
                 
                 # Critical: Ensure the category in the output is the one we used for the prompt (the variant)
@@ -1151,20 +1179,32 @@ class PuzzleGenerator:
                 generated_phrase = puzzle_data.get('phrase')
                 if not generated_phrase:
                      return None
+                # NEW: Check for explanation
+                explanation = puzzle_data.get('explanation')
+                if not explanation or len(explanation) < 10: # Basic check for empty/too short explanation
+                    return None
+
                 emoji_char_list = [emoji for emoji in puzzle_data['emojis'].split(' ') if emoji]
                 if not emoji_char_list:
                     return None
                 
+                # UPDATED: Add explanation to the returned dictionary
                 parsed_details = {
-                    'phrase': puzzle_data['phrase'], 'words': puzzle_data['words'],
-                    'category': puzzle_data['category'], 'emojis_list': emoji_char_list
+                    'phrase': puzzle_data['phrase'], 
+                    'words': puzzle_data['words'],
+                    'category': puzzle_data['category'], 
+                    'emojis_list': emoji_char_list,
+                    'explanation': puzzle_data['explanation']
                 }
                 return parsed_details
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                print(f"JSON Decode Error: {e}\nCould not parse response: {response_text[:500]}")
                 return None
-            except Exception:
+            except Exception as e:
+                print(f"An unexpected error occurred during puzzle parsing: {e}")
                 return None
         else:
+            print(f"Failed to get a valid response from model: {response_text}")
             return None
 
     def generate_parsed_puzzle_details(self):
@@ -1173,7 +1213,7 @@ class PuzzleGenerator:
         if not self.categories:
             return None
 
-        base_category = random.choice(self.categories) #
+        base_category = random.choice(self.categories)
         print(f"Selected base category: '{base_category}'")
 
         # Step 1: Generate a variant of the category
@@ -1181,56 +1221,43 @@ class PuzzleGenerator:
         # current_puzzle_category is now either the variant or the base_category (if fallback)
         print(f"Using category for puzzle generation: '{current_puzzle_category}'")
         
-        # print(f"Will instruct LLM to avoid these recent phrases (up to {self.max_recent_phrases}): {self.recently_used_phrases}") # Optional
-
-        for attempt in range(self.max_retry_attempts): #
-            # print(f"\nGeneration attempt {attempt + 1}/{self.max_retry_attempts}") # Optional
+        for attempt in range(self.max_retry_attempts):
             
             # Pass the (potentially variant) current_puzzle_category to the attempt method
             parsed_details = self._generate_single_puzzle_attempt(current_puzzle_category) 
             
             if parsed_details is None:
-                # print(f"Attempt {attempt + 1} failed to generate valid puzzle details.") # Optional
                 continue
             
             generated_phrase = parsed_details['phrase']
             
-            # Ensure the category in parsed_details is what we used (the variant or fallback)
-            # This should be handled by _generate_single_puzzle_attempt, but double-check
             if parsed_details['category'] != current_puzzle_category:
                 print(f"Warning: Category mismatch after puzzle attempt. Expected '{current_puzzle_category}', got '{parsed_details['category']}'. Overwriting.")
                 parsed_details['category'] = current_puzzle_category
 
 
-            if generated_phrase in self.recently_used_phrases: #
-                # print(f"⚠️  Duplicate detected! Phrase '{generated_phrase}' is already in recent history.") # Optional
+            if generated_phrase in self.recently_used_phrases:
                 if attempt == self.max_retry_attempts - 1:
-                    # print(f"Max retries reached. Using duplicate phrase: {generated_phrase}") # Optional
                     self._add_to_recent_phrases(generated_phrase)
-                    # print(f"Successfully parsed puzzle details (with duplicate warning): {parsed_details}") # Optional
                     return parsed_details
                 else:
-                    # print("Retrying to get a unique phrase...") # Optional
                     continue
             else:
-                # print(f"✅ Unique phrase generated: {generated_phrase}") # Optional
                 self._add_to_recent_phrases(generated_phrase)
-                # print(f"Successfully parsed puzzle details: {parsed_details}") # Optional
                 return parsed_details
         
-        # print(f"Failed to generate a valid puzzle after {self.max_retry_attempts} attempts.") # Optional
         return None
 
 # --- Main execution for testing (optional) ---
 if __name__ == "__main__":
     print("Starting Puzzle Generator Test (CSV Logging now triggered by backend API)...")
-    generator = PuzzleGenerator(model_name="gemma3:27b") #
+    generator = PuzzleGenerator(model_name="gemma3:27b")
 
     if not generator.connector or not generator.connector.get_models():
          print("Could not connect to Ollama or no models available.")
     else:
-        print(f"Puzzle Generator initialized. CSV log target: {generator.csv_log_file_path}") #
-        print(f"CSV Header: {generator.csv_header}") #
+        print(f"Puzzle Generator initialized. CSV log target: {generator.csv_log_file_path}")
+        print(f"CSV Header: {generator.csv_header}")
         
         print("\nSimulating a call to _log_puzzle_to_csv (as if from app.py after a puzzle round):")
         generator._log_puzzle_to_csv(
@@ -1241,7 +1268,7 @@ if __name__ == "__main__":
             letter_hints_used=1,
             puzzle_score=85,
             total_score_at_end=1085
-        ) #
+        )
         generator._log_puzzle_to_csv(
             category="Another Category",
             phrase="Test Phrase Failed",
@@ -1250,18 +1277,20 @@ if __name__ == "__main__":
             letter_hints_used=3,
             puzzle_score=0,
             total_score_at_end=1085 
-        ) #
-        print(f"Test log entries should be in {generator.csv_log_file_path}") #
+        )
+        print(f"Test log entries should be in {generator.csv_log_file_path}")
 
         print("\n--- Generating a test puzzle (logging will occur via backend API in real app) ---")
-        for i in range(3): # Generate a few puzzles to see variant logic
+        for i in range(3):
             print(f"\n--- Test Generation Run {i+1} ---")
-            puzzle_details = generator.generate_parsed_puzzle_details() #
+            puzzle_details = generator.generate_parsed_puzzle_details()
             if puzzle_details:
                 print("\nSuccessfully generated (but not yet logged by this script):")
-                print(f"  Category Used: {puzzle_details['category']}") #
-                print(f"  Phrase: {puzzle_details['phrase']}") #
-                print(f"  Emojis: {puzzle_details['emojis_list']}") #
+                print(f"  Category Used: {puzzle_details['category']}")
+                print(f"  Phrase: {puzzle_details['phrase']}")
+                print(f"  Emojis: {puzzle_details['emojis_list']}")
+                # UPDATED: Print the new explanation field for testing
+                print(f"  Explanation: {puzzle_details['explanation']}")
             else:
                 print("\nCould not generate test puzzle details for this run.")
         print("--------------------------------------")
