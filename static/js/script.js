@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let gamePhase = 'playing'; // 'playing', 'completed', 'abandoned', 'final_answer'
         let stepsCompleted = []; // Array to track which steps are done
         let finalAnswerTimeoutId = null; // Timer for final answer
-        let finalAnswerTimeRemaining = 10; // 10 seconds for final answer
+        let finalAnswerTimeRemaining = 30; // 10 seconds for final answer
 
         // --- FIXED: Step Configuration Object (changed "New Puzzle" to "Start") ---
         const GAME_STEPS = {
@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let currentTotalScore = 0;
         let currentPuzzleBasePoints = 100;
         let hintTimeoutId = null;
-        const HINT_INTERVAL_SECONDS = 15;
+        const HINT_INTERVAL_SECONDS = 30;
         let timeToNextHintTick = HINT_INTERVAL_SECONDS;
         let isHintPaused = false;
         let revealedLetterPositions = [];
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             gamePhase = 'final_answer';
-            finalAnswerTimeRemaining = 10;
+            finalAnswerTimeRemaining = 30;
             
             if (finalAnswerTimer) {
                 finalAnswerTimer.style.display = 'block';
@@ -699,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (emojiDisplay) emojiDisplay.textContent = currentPuzzle.emojis_list.join(' ');
                     if (categoryText) categoryText.textContent = currentPuzzle.category;
                     renderPhraseDisplay();
-                    startHintTimer(); 
+                    // startHintTimer();// disable auto-start for hints on new puzzle
                     
                     // Update all UI elements for new puzzle
                     updateAllUI();
