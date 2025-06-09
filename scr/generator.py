@@ -13,7 +13,9 @@ class PuzzleGenerator:
         self.model_name = model_name
         
         # --- CSV Logging Setup ---
-        self.csv_log_file_path = "/Users/johnhuberd/PythonProjects/ConcentrationGameWeb/puzzle_log.csv"
+        # Determine the project root (one directory up from 'src') and set the log file path
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        self.csv_log_file_path = os.path.join(project_root, "puzzle_log.csv")
         # Updated CSV Header
         self.csv_header = [
             "Timestamp", "Category", "Phrase", "Emojis",
