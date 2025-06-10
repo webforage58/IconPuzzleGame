@@ -66,11 +66,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let isCurrentPuzzleLogged = false; // Flag to track if current puzzle result is logged
         
-        // --- NEW: Function to display the puzzle explanation ---
+        // --- UPDATED: Function to display the puzzle explanation ---
         function displayExplanation() {
             if (explanationDisplay && currentPuzzle && currentPuzzle.explanation) {
                 explanationDisplay.innerHTML = `<strong>Explanation:</strong> ${currentPuzzle.explanation}`;
                 explanationDisplay.style.display = 'block';
+                // NEW: Scroll the explanation into view smoothly
+                explanationDisplay.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         }
 
@@ -248,10 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 phraseDisplay.appendChild(wordDiv);
-                if (wordIndex < currentPuzzle.words.length - 1) {
-                     const space = document.createTextNode('\u00A0');
-                     phraseDisplay.appendChild(space);
-                }
+                // DELETED: The conflicting code that added a space was removed from here.
             });
         }
         
