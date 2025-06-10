@@ -1,3 +1,4 @@
+`
 /* static/css/style.css */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -265,18 +266,18 @@ body {
 /* Centering fix applied to the ID #phrase-display */
 #phrase-display {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row; /* Change to row for horizontal layout */
+    flex-wrap: wrap; /* Allow wrapping if needed */
+    justify-content: center; /* Center the entire line(s) of words */
+    align-items: center; /* Vertically align words if they are on the same line */
 }
 
-.phrase-display .word {
-    /* Keep word as inline-block if needed for margin-right/bottom */
-    /* If #phrase-display is flex-direction: column, word is a flex item */
-    /* If you want to center the content WITHIN the word, use justify-content: center on .word */
-    display: flex; /* Changed to flex to center letter blanks within the word */
-    justify-content: center; /* Center the letter blanks horizontally */
-    margin-right: 0; /* Removed margin-right as it affects centering of the block */
-    margin-bottom: 0.3em; /* Keep vertical spacing between words */
+/* Adjusted selector to correctly apply margin to words within #phrase-display */
+#phrase-display .word {
+    display: flex;
+    justify-content: center;
+    margin-right: 0.5em; /* Add margin back for horizontal spacing */
+    margin-bottom: 0.3em; /* Keep some vertical spacing in case of wrapping */
 }
 
 .phrase-display .letter-blank {
