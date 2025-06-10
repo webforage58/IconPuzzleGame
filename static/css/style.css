@@ -1,4 +1,3 @@
-`
 /* static/css/style.css */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -451,4 +450,5 @@ body {
 
 /* Letter Hint Button Styling */
 #letter-hint-button {
-    background-color: #ff5722; /* Ora
+    background-color: #ff5722; /* Orange-Red for letter hint */
+}
